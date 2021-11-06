@@ -1,59 +1,144 @@
 #!/usr/bin/env python3
 
+from re import match, split, DOTALL
 from select import select
+import sqlite3
 from socket import socket, AF_INET, SHUT_RDWR, SO_REUSEADDR, SOCK_STREAM, SOL_SOCKET
-from sys import exit
 
 SERVER_ADDRESS = ('localhost', 9000)
 
-class Server:
-  def __init__(self):
-    server_socket = socket(AF_INET, SOCK_STREAM)
-    server_socket.setblocking(0)
-    server_socket.setsockopt(SOL_SOCKET, SO_REUSEADDR, 1)
-    server_socket.bind(SERVER_ADDRESS)
-    server_socket.listen(5)
-    self.socket = server_socket
+connected_clients = {}
+logged_in_users = {}
 
-  def get_socket(self):
-    return self.socket
+def parse_headers(match_headers):
+  headers_dict = {}
+  for line in match_headers.split('\n'):
+    if not line: continue
+    key, value = split(': ', line, 1)
+    headers_dict[key] = value
+  return headers_dict
 
-  def accept_connection(self):
-    client_socket, _ = self.socket.accept()
+def register_new_user(username, password):
+  connection = sqlite3.connect('users.db')
+  cursor = connection.cursor()
+
+  try:
+    cursor.execute('''
+      INSERT INTO users(username, password)
+      VALUES(?,?)
+      ''', (username, password))
+    connection.commit()
+  except:
+    connection.close()
+    return 1
+  else:
+    connection.close()
+    return 0
+
+def client_login(username, password):
+  connection = sqlite3.connect('users.db')
+  cursor = connection.cursor()
+
+  try:
+    cursor.execute('''
+      SELECT username FROM users
+      WHERE username = ? AND password = ?
+      ''', (username, password))
+    data = cursor.fetchone()
+    if data is None:
+      return 1
+    else:
+      return username
+  except:
+    connection.close()
+    return 1
+
+class Connection:
+  def __init__(self, server_socket):
+    client_socket, _ = server_socket.accept()
     client_socket.setblocking(0)
-    return client_socket
+    self.client_socket = client_socket
 
-  def disconnect(self, client_socket):
-    client_socket.shutdown(SHUT_RDWR)
-    client_socket.close()
+  def disconnect(self):
+    self.client_socket.shutdown(SHUT_RDWR)
+    self.client_socket.close()
+    return self.client_socket
 
-def run_server(server):
-  server_socket = server.get_socket()
+  def get_client_socket(self):
+    return self.client_socket
 
+  def process_data(self, data):
+    if not data:
+      client_socket = self.disconnect()
+      connected_clients.pop(client_socket, None)
+      return
+
+    print(repr(data))
+    data_match = match('^(?P<headers>.*\n)\n(?P<payload>.*)$', data, flags=DOTALL)
+    headers = parse_headers(data_match['headers'])
+
+    event = headers['event']
+    if event == 'login':
+      result = client_login(headers['username'], headers['password'])
+      self.get_client_socket().send(str(result).encode())
+      if result == headers['username']:
+        self.username = result
+        logged_in_users[result] = self
+    elif event == 'register':
+      result = register_new_user(headers['username'], headers['password'])
+      self.get_client_socket().send(str(result).encode())
+    elif event == 'outgoing':
+      recipient = headers['recipient']
+      payload = data_match['payload']
+      print('Received message: ' + payload)
+      message = 'event: incoming\nfrom: {}\n\n'.format(self.username) + payload
+      logged_in_users[recipient].get_client_socket().send(message.encode())
+
+def initialize_server():
+  server_socket = socket(AF_INET, SOCK_STREAM)
+  server_socket.setblocking(0)
+  server_socket.setsockopt(SOL_SOCKET, SO_REUSEADDR, 1)
+  server_socket.bind(SERVER_ADDRESS)
+  server_socket.listen(5)
+  return server_socket
+
+def create_database():
+  connection = sqlite3.connect('users.db')
+  cursor = connection.cursor()
+
+  cursor.execute('''
+    CREATE TABLE IF NOT EXISTS users(
+      username TEXT PRIMARY KEY,
+      password TEXT NOT NULL
+    )
+  ''')
+
+  connection.commit()
+  connection.close()
+
+def run_server(server_socket):
   inputs            = [server_socket]
-  outputs           = []
+  # outputs           = []
 
   while True:
-    readable, writable, exceptional = select(inputs, outputs, inputs, 5)
+    readable, writable, exceptional = select(inputs, inputs, inputs)
 
     for ready_socket in readable:
       if ready_socket == server_socket:
-        client_socket = server.accept_connection()
+        connection = Connection(server_socket)
+        client_socket = connection.get_client_socket()
+        connected_clients[client_socket] = connection
         inputs.append(client_socket)
 
       else:
-        message = ready_socket.recv(1024).decode()
-
-        if not message:
-          server.disconnect(ready_socket)
-          inputs.remove(ready_socket)
-          break
-
-        print('Received message: ' + message)
+        data = ready_socket.recv(1024).decode()
+        connection = connected_clients[ready_socket]
+        connection.process_data(data)
         
 def main():
-  server = Server()
-  retval = run_server(server)
+  server_socket = initialize_server()
+  create_database()
+  retval = run_server(server_socket)
   exit(retval)
 
 if __name__ == "__main__":
