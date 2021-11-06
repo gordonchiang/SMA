@@ -31,11 +31,19 @@ class Client:
     message = 'event: login\nusername: {}\npassword: {}\n\n'.format(username, password)
     self.send(message)
 
-    result = self.receive()
-    if result == self.username:
-      print('Login succeeded!')
-      return 0
-    else:
+    response = self.receive()
+
+    data_match = match('^(?P<headers>.*\n)\n(?P<payload>.*)$', response, flags=DOTALL)
+    headers = parse_headers(data_match['headers'])
+
+    try:
+      if headers['event'] == 'login' and headers['status'] == 'success':
+        print('Login succeeded!')
+        return 0
+      else:
+        print('Login failed!')
+        return 1
+    except:
       print('Login failed!')
       return 1
 
@@ -45,9 +53,21 @@ class Client:
     message = 'event: register\nusername: {}\npassword: {}\n\n'.format(username, password)
     self.send(message)
 
-    result = self.receive()
-    if result == '0': print('Registration succeeded!')
-    else: print('Registration failed!')
+    response = self.receive()
+    
+    data_match = match('^(?P<headers>.*\n)\n(?P<payload>.*)$', response, flags=DOTALL)
+    headers = parse_headers(data_match['headers'])
+
+    try:
+      if headers['event'] == 'register' and headers['status'] == 'success':
+        print('Registration succeeded!')
+        return 0
+      else:
+        print('Registration failed!')
+        return 1
+    except:
+      print('Registration failed!')
+      return 1
 
   def disconnect(self):
     self.socket.shutdown(SHUT_RDWR)
@@ -58,11 +78,13 @@ class Client:
     self.socket.send(message.encode())
 
   def outgoing(self, message, recipient):
-    headers = 'event: outgoing\nusername: {}\nrecipient: {}\n\n'.format(self.username, recipient)
+    headers = 'event: outgoing\nusername: {}\nto: {}\n\n'.format(self.username, recipient)
     self.send(headers + message)
 
   def receive(self, buffer = 1024):
-    return self.socket.recv(buffer).decode()
+    data = self.socket.recv(buffer).decode()
+    if not data: exit(self.disconnect())
+    return data
 
   def listen(self):
     data = self.receive()

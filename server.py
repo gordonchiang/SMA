@@ -6,9 +6,12 @@ import sqlite3
 from socket import socket, AF_INET, SHUT_RDWR, SO_REUSEADDR, SOCK_STREAM, SOL_SOCKET
 
 SERVER_ADDRESS = ('localhost', 9000)
+USERS_DATABASE = 'users.db'
 
-connected_clients = {}
-logged_in_users = {}
+inputs = []
+socket_connections = {} # key: socket, value: Connection
+username_connections = {} # key: username, value: Connection
+
 
 def parse_headers(match_headers):
   headers_dict = {}
@@ -18,11 +21,11 @@ def parse_headers(match_headers):
     headers_dict[key] = value
   return headers_dict
 
-def register_new_user(username, password):
-  connection = sqlite3.connect('users.db')
-  cursor = connection.cursor()
-
+def register_new_user(client_socket, username, password):
   try:
+    connection = sqlite3.connect(USERS_DATABASE)
+    cursor = connection.cursor()
+
     cursor.execute('''
       INSERT INTO users(username, password)
       VALUES(?,?)
@@ -30,80 +33,89 @@ def register_new_user(username, password):
     connection.commit()
   except:
     connection.close()
-    return 1
+    client_socket.send('event: register\nstatus: fail\n\n'.encode())
   else:
     connection.close()
-    return 0
+    client_socket.send('event: register\nstatus: success\n\n'.encode())
 
-def client_login(username, password):
-  connection = sqlite3.connect('users.db')
-  cursor = connection.cursor()
+def client_login(connection_obj, username, password):
+  client_socket = connection_obj.get_client_socket()
 
   try:
+    connection = sqlite3.connect(USERS_DATABASE)
+    cursor = connection.cursor()
+
     cursor.execute('''
       SELECT username FROM users
       WHERE username = ? AND password = ?
       ''', (username, password))
     data = cursor.fetchone()
-    if data is None:
-      return 1
-    else:
-      return username
   except:
     connection.close()
-    return 1
+    client_socket.send('event: login\nstatus: fail\n\n'.encode())
+    return None
+  else:
+    if data is None:
+      connection.close()
+      client_socket.send('event: login\nstatus: fail\n\n'.encode())
+      return None
+    else:
+      connection.close()
+      connection_obj.set_username(username)
+      username_connections[username] = connection_obj
+      client_socket.send('event: login\nstatus: success\n\n'.encode())
+      return username
+
+def relay_message(source, recipient, payload):
+  message = 'event: incoming\nfrom: {}\n\n'.format(source) + payload
+  username_connections[recipient].get_client_socket().send(message.encode())
+
 
 class Connection:
   def __init__(self, server_socket):
     client_socket, _ = server_socket.accept()
     client_socket.setblocking(0)
     self.client_socket = client_socket
+    socket_connections[self.client_socket] = self
+    inputs.append(self.client_socket)
 
   def disconnect(self):
     self.client_socket.shutdown(SHUT_RDWR)
     self.client_socket.close()
-    return self.client_socket
+    if self.client_socket in inputs: inputs.remove(self.client_socket)
 
   def get_client_socket(self):
     return self.client_socket
 
-  def process_data(self, data):
-    if not data:
-      client_socket = self.disconnect()
-      connected_clients.pop(client_socket, None)
+  def set_username(self, username):
+    self.username = username
+
+  def process_data(self):
+    data = self.client_socket.recv(1024).decode()
+
+    if not data: return self.disconnect()
+
+    try:
+      data_match = match('^(?P<headers>.*\n)\n(?P<payload>.*)$', data, flags=DOTALL)
+      headers = parse_headers(data_match['headers'])
+
+      event = headers['event']
+
+      if event == 'outgoing':
+        relay_message(self.username, headers['to'], data_match['payload'])
+
+      elif event == 'login':
+        result = client_login(self, headers['username'], headers['password'])
+
+      elif event == 'register':
+        register_new_user(self.client_socket, headers['username'], headers['password'])
+
+    except:
+      print('Error processing data')
       return
 
-    print(repr(data))
-    data_match = match('^(?P<headers>.*\n)\n(?P<payload>.*)$', data, flags=DOTALL)
-    headers = parse_headers(data_match['headers'])
-
-    event = headers['event']
-    if event == 'login':
-      result = client_login(headers['username'], headers['password'])
-      self.get_client_socket().send(str(result).encode())
-      if result == headers['username']:
-        self.username = result
-        logged_in_users[result] = self
-    elif event == 'register':
-      result = register_new_user(headers['username'], headers['password'])
-      self.get_client_socket().send(str(result).encode())
-    elif event == 'outgoing':
-      recipient = headers['recipient']
-      payload = data_match['payload']
-      print('Received message: ' + payload)
-      message = 'event: incoming\nfrom: {}\n\n'.format(self.username) + payload
-      logged_in_users[recipient].get_client_socket().send(message.encode())
-
-def initialize_server():
-  server_socket = socket(AF_INET, SOCK_STREAM)
-  server_socket.setblocking(0)
-  server_socket.setsockopt(SOL_SOCKET, SO_REUSEADDR, 1)
-  server_socket.bind(SERVER_ADDRESS)
-  server_socket.listen(5)
-  return server_socket
-
-def create_database():
-  connection = sqlite3.connect('users.db')
+def create_users_database():
+  connection = sqlite3.connect(USERS_DATABASE)
   cursor = connection.cursor()
 
   cursor.execute('''
@@ -116,28 +128,32 @@ def create_database():
   connection.commit()
   connection.close()
 
-def run_server(server_socket):
-  inputs            = [server_socket]
-  # outputs           = []
+def initialize_server():
+  server_socket = socket(AF_INET, SOCK_STREAM)
+  server_socket.setblocking(0)
+  server_socket.setsockopt(SOL_SOCKET, SO_REUSEADDR, 1)
+  server_socket.bind(SERVER_ADDRESS)
+  server_socket.listen(5)
+  inputs.append(server_socket)
 
+  create_users_database()
+
+  return server_socket
+
+def run_server(server_socket):
   while True:
-    readable, writable, exceptional = select(inputs, inputs, inputs)
+    readable, _, _ = select(inputs, [], [])
 
     for ready_socket in readable:
       if ready_socket == server_socket:
         connection = Connection(server_socket)
-        client_socket = connection.get_client_socket()
-        connected_clients[client_socket] = connection
-        inputs.append(client_socket)
 
       else:
-        data = ready_socket.recv(1024).decode()
-        connection = connected_clients[ready_socket]
-        connection.process_data(data)
+        connection = socket_connections[ready_socket]
+        connection.process_data()
         
 def main():
   server_socket = initialize_server()
-  create_database()
   retval = run_server(server_socket)
   exit(retval)
 
