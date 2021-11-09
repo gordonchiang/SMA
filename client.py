@@ -4,6 +4,7 @@ from re import match, split, DOTALL
 from socket import socket, AF_INET, SHUT_RDWR, SO_REUSEADDR, SOCK_STREAM, SOL_SOCKET
 from sys import exit
 import threading
+import ssl
 
 SERVER_ADDRESS = ('localhost', 9000)
 
@@ -17,8 +18,11 @@ def parse_headers(match_headers):
 
 class Client:
   def __init__(self):
-    client_socket = socket(AF_INET, SOCK_STREAM)
-    client_socket.setsockopt(SOL_SOCKET, SO_REUSEADDR, 1)
+    ctx = ssl.SSLContext(ssl.PROTOCOL_TLS_CLIENT)
+    ctx.load_verify_locations('certificate.crt')
+    sock = socket(AF_INET, SOCK_STREAM)
+    sock.setsockopt(SOL_SOCKET, SO_REUSEADDR, 1)
+    client_socket = ctx.wrap_socket(sock, server_hostname=SERVER_ADDRESS[0])
     self.socket = client_socket
 
   def connect(self, server):

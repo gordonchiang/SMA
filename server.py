@@ -3,6 +3,8 @@
 from re import match, split, DOTALL
 from select import select
 import sqlite3
+import ssl
+from SelfSignedCertificate import *
 from socket import socket, AF_INET, SHUT_RDWR, SO_REUSEADDR, SOCK_STREAM, SOL_SOCKET
 
 SERVER_ADDRESS = ('localhost', 9000)
@@ -128,8 +130,14 @@ def create_users_database():
   connection.commit()
   connection.close()
 
+def initialize_certificate():
+  cert = SelfSignedCertificate(SERVER_ADDRESS[0], b'passphrase')
+
 def initialize_server():
-  server_socket = socket(AF_INET, SOCK_STREAM)
+  ctx = ssl.SSLContext(ssl.PROTOCOL_TLS_SERVER)
+  ctx.load_cert_chain('./certificate.crt', './key.pem')
+  sock = socket(AF_INET, SOCK_STREAM)
+  server_socket = ctx.wrap_socket(sock)
   server_socket.setblocking(0)
   server_socket.setsockopt(SOL_SOCKET, SO_REUSEADDR, 1)
   server_socket.bind(SERVER_ADDRESS)
@@ -153,6 +161,7 @@ def run_server(server_socket):
         connection.process_data()
         
 def main():
+  initialize_certificate()
   server_socket = initialize_server()
   retval = run_server(server_socket)
   exit(retval)
