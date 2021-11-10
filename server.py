@@ -6,7 +6,7 @@ import sqlite3
 from socket import socket, AF_INET, SHUT_RDWR, SO_REUSEADDR, SOCK_STREAM, SOL_SOCKET
 
 SERVER_ADDRESS = ('localhost', 9000)
-USERS_DATABASE = 'users.db'
+SM_DATABASE = 'sm.db'
 
 inputs = []
 socket_connections = {} # key: socket, value: Connection
@@ -114,14 +114,23 @@ class Connection:
       print('Error processing data')
       return
 
-def create_users_database():
-  connection = sqlite3.connect(USERS_DATABASE)
-  cursor = connection.cursor()
+def makedb():
+  conn = sqlite3.connect(SM_DATABASE)
+  cursor = conn.cursor()
 
   cursor.execute('''
     CREATE TABLE IF NOT EXISTS users(
       username TEXT PRIMARY KEY,
-      password TEXT NOT NULL
+      hsh_password TEXT NOT NULL
+    )
+  ''')
+
+    cursor.execute('''
+    CREATE TABLE IF NOT EXISTS msg_history(
+      id INTEGER PRIMARY KEY,
+      sender TEXT NOT NULL,
+      recipient TEXT NOT NULL,
+      hsh_message TEXT
     )
   ''')
 
@@ -136,7 +145,7 @@ def initialize_server():
   server_socket.listen(5)
   inputs.append(server_socket)
 
-  create_users_database()
+  makedb()
 
   return server_socket
 
