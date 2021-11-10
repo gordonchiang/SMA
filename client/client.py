@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 
 from queue import Queue
-from re import match, split, DOTALL
+from re import match, DOTALL
 from socket import socket, AF_INET, SHUT_RDWR, SOCK_STREAM
 import sys
 from threading import Thread
