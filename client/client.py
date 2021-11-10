@@ -5,6 +5,7 @@ from re import match, split, DOTALL
 from socket import socket, AF_INET, SHUT_RDWR, SOCK_STREAM
 import sys
 from threading import Thread
+import tkinter
 
 SERVER_ADDRESS = ('localhost', 9000)
 SUCCESS = 0
@@ -22,27 +23,48 @@ class Chat:
     self.username = username
     self.partner = partner
     self.message_queue = Queue()
+    self.conversation = ''
 
-    window = Thread(target=self.__chat, args=(self.partner,), daemon=True)
-    window.start()
-
-  def __update_window(self):
+  def update_window(self):
     while True:
       message = self.message_queue.get(block=True, timeout=None)
       print('{}: {}'.format(self.partner, message))
 
-  def __chat(self, partner):
-    updater = Thread(target=self.__update_window, daemon=True)
-    updater.start()
-
-    while True:
-      payload = input('Your message: ')
-      if not payload: continue
+  def chat(self):
+    chat_window = tkinter.Toplevel(root)
+  
+    def get_input(textbox):
+      payload = input_text.get()
       headers = 'event: outgoing\nusername: {}\nto: {}\n\n'.format(self.username, self.partner)
       client_socket.send(headers + payload)
+      self.load_message('{}: {}'.format(self.username, payload))
+
+    def display_conversation():
+      while not self.message_queue.empty():
+        try:
+          text = self.message_queue.get_nowait()
+          conversation.insert(tkinter.END, text)
+        except:
+          continue
+
+      chat_window.after(1000, display_conversation)
+
+    conversation = tkinter.Text(chat_window)
+    conversation.insert(tkinter.END, self.conversation)
+    conversation.update()
+    conversation.pack()
+
+    display_conversation()
+
+    chat_window.after(1000, display_conversation)
+    
+    input_text = tkinter.StringVar()
+    partner_entry = tkinter.Entry(chat_window, textvariable=input_text)
+    partner_entry.pack()
+    partner_entry.bind('<Return>', get_input)
 
   def load_message(self, message):
-    self.message_queue.put_nowait(message)
+    self.message_queue.put_nowait(message + '\n')
 
 """
   listen()
@@ -59,16 +81,27 @@ def listen():
     partner = headers['from']
     if event == 'incoming':
       if partner not in chats: chats[partner] = Chat(partner)
-      chats[partner].load_message(payload)
+      chats[partner].load_message('{}: {}'.format(partner, payload))
 
-def chat():
-  partner = input('Enter the username of the user you wish to chat with: ')
-  if not partner.isalnum(): return FAILURE
+"""
+  chat()
 
-  if partner not in chats:
-    chats[partner] = Chat(partner)
+  Initialize a new chat with a partner.
+"""
+def chat(root):
+  window = tkinter.Toplevel(root)
 
-  return SUCCESS
+  def get_input(textbox):
+    partner = input_text.get()
+    if partner not in chats:
+      chats[partner] = Chat(partner)
+    chats[partner].chat()
+    window.destroy()
+
+  input_text = tkinter.StringVar()
+  partner_entry = tkinter.Entry(window, text='Enter the username of the user you wish to chat with', textvariable=input_text)
+  partner_entry.pack()
+  partner_entry.bind('<Return>', get_input)
 
 """
   show_messaging_menu()
@@ -80,25 +113,13 @@ def show_messaging_menu():
   listener = Thread(target=listen, daemon=True)
   listener.start()
 
-  while True:
-    # Display available options
-    print('1. Enter `1` to open a chat with another user')
-    print('2. Enter `2` to logout and exit')
+  global root
+  root = tkinter.Tk()
 
-    # Request user input
-    action = input('What would you like to do? ')
+  chat_button = tkinter.Button(root, text='Chat', command=lambda: chat(root)).pack()
+  exit_button = tkinter.Button(root, text='Exit', command=lambda: client_socket.disconnect(SUCCESS)).pack()
 
-    # Error checking on user input
-    if not action.isdecimal(): continue
-    action = int(action)
-
-    # Open a chat with another user
-    if action == 1:
-      chat()
-
-    # Logout and exit
-    elif action == 2:
-      client_socket.disconnect(SUCCESS)
+  root.mainloop()
 
 """
   ClientServerConnection
