@@ -3,6 +3,8 @@
 from re import match, split, DOTALL
 from select import select
 import sqlite3
+import ssl
+from SelfSignedCertificate import *
 from socket import socket, AF_INET, SHUT_RDWR, SO_REUSEADDR, SOCK_STREAM, SOL_SOCKET
 import sys
 
@@ -202,7 +204,10 @@ def create_users_database():
   Initialize the server's socket and database.
 """
 def initialize_server():
-  server_socket = socket(AF_INET, SOCK_STREAM)
+  ctx = ssl.SSLContext(ssl.PROTOCOL_TLS_SERVER)
+  ctx.load_cert_chain('./certificate.crt', './key.pem')
+  sock = socket(AF_INET, SOCK_STREAM)
+  server_socket = ctx.wrap_socket(sock)
   server_socket.setblocking(0)
   server_socket.setsockopt(SOL_SOCKET, SO_REUSEADDR, 1)
   server_socket.bind(SERVER_ADDRESS)
@@ -212,6 +217,20 @@ def initialize_server():
   create_users_database()
 
   return server_socket
+
+def initialize_certificate():
+  '''
+  initialize_certificate()
+
+  Signs a certificate to be used for server authentication via TLS.
+  Creates two files that contain the certificate and the private key.
+  The files are currently just named 'certificate.crt' and 'key.pem'
+  
+  TODO:
+  Modify SelfSignedCertificate to load previously established certificates
+  that are shared with the clients.
+  '''
+  cert = SelfSignedCertificate(SERVER_ADDRESS[0], b'passphrase')
 
 """
   run_server()
@@ -234,6 +253,7 @@ def run_server(server_socket):
         connection.process_data()
         
 def main():
+  initialize_certificate()
   server_socket = initialize_server()
   run_server(server_socket)
   sys.exit(SUCCESS)

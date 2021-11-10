@@ -3,6 +3,7 @@
 from queue import Queue
 from re import match, split, DOTALL
 from socket import socket, AF_INET, SHUT_RDWR, SOCK_STREAM
+import ssl
 import sys
 from threading import Thread
 import tkinter
@@ -270,7 +271,10 @@ def show_main_menu():
 def connect(server_address):
   # Connect to the server
   try:
-    sock = socket(AF_INET, SOCK_STREAM)
+    ctx = ssl.SSLContext(ssl.PROTOCOL_TLS_CLIENT)
+    ctx.load_verify_locations('certificate.crt')
+    pre_sock = socket(AF_INET, SOCK_STREAM)
+    sock = ctx.wrap_socket(pre_sock, server_hostname=SERVER_ADDRESS[0])
     sock.connect(server_address)
 
     global client_socket
