@@ -1,9 +1,10 @@
 #!/usr/bin/env python3
 
-from re import match, DOTALL
+from re import match, split, DOTALL
 from select import select
 import sqlite3
 from socket import socket, AF_INET, SHUT_RDWR, SO_REUSEADDR, SOCK_STREAM, SOL_SOCKET
+import sys
 
 SERVER_ADDRESS = ('localhost', 9000)
 USERS_DATABASE = 'users.db'
@@ -38,7 +39,7 @@ def parse_incoming(data):
 
   # Failed to parse incomnig data, exit
   except:
-    sys.stderr.write('Unable parse incoming data: ', data, '\n')
+    sys.stderr.write('Unable to parse incoming data: ', data, '\n')
     sys.exit(FAILURE)
 
 """
@@ -165,7 +166,7 @@ class Connection:
 
       # Authenticate the client
       elif event == 'login':
-        result = client_login(self, headers['username'], headers['password'])
+        client_login(self, headers['username'], headers['password'])
 
       # Register a new client
       elif event == 'register':
@@ -235,9 +236,10 @@ def run_server(server_socket):
 def main():
   server_socket = initialize_server()
   run_server(server_socket)
+  sys.exit(SUCCESS)
 
 if __name__ == "__main__":
   try:
     main()
   except KeyboardInterrupt:
-    exit(SUCCESS)
+    sys.exit(SUCCESS)

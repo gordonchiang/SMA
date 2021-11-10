@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 
 from queue import Queue
-from re import match, DOTALL
+from re import match, split, DOTALL
 from socket import socket, AF_INET, SHUT_RDWR, SOCK_STREAM
 import sys
 from threading import Thread
@@ -14,6 +14,33 @@ FAILURE = 1
 client_socket = None
 username = None
 chats = {}
+
+"""
+  parse_incoming()
+
+  Parse the headers and the payload from the incoming data from the server.
+"""
+def parse_incoming(data):
+  try:
+    # Scan for the headers and the payload in the incoming data
+    data_match = match('^(?P<headers>.*\n)\n(?P<payload>.*)$', data, flags=DOTALL)
+
+    # Create a dictionary for the headers and header values
+    headers = {}
+    for line in data_match['headers'].split('\n'):
+      if not line: continue
+      key, value = split(': ', line, 1)
+      headers[key] = value
+
+    # Optional payload in data
+    payload = data_match['payload']
+
+    return headers, payload
+
+  # Failed to parse incomnig data, exit
+  except:
+    sys.stderr.write('Unable to parse incoming data: ', data, '\n')
+    sys.exit(FAILURE)
 
 """
   Chat
@@ -75,7 +102,7 @@ class Chat:
 """
   listen()
 
-  Listen for incomnig data from the server. Parse incoming data and dispatch the
+  Listen for incoming data from the server. Parse incoming data and dispatch the
   incoming user messages accordingly.
 """
 def listen():
@@ -155,53 +182,7 @@ class ClientServerConnection:
   def disconnect(self, code):
     if code == SUCCESS: self.socket.shutdown(SHUT_RDWR)
     self.socket.close()
-    exit(code)
-
-"""
-  connect()
-
-  Try to connect to the configured server. If connection is unsuccessful, exit.
-"""
-def connect(server_address):
-  # Connect to the server
-  try:
-    sock = socket(AF_INET, SOCK_STREAM)
-    sock.connect(server_address)
-
-    global client_socket
-    client_socket = ClientServerConnection(sock)
-
-  # Failed to connect to server, exit
-  except:
-    sys.stderr.write('Unable to connect to the server\n')
-    sys.exit(FAILURE)
-
-"""
-  parse_incoming()
-
-  Parse the headers and the payload from the incoming data from the server.
-"""
-def parse_incoming(data):
-  try:
-    # Scan for the headers and the payload in the incoming data
-    data_match = match('^(?P<headers>.*\n)\n(?P<payload>.*)$', data, flags=DOTALL)
-
-    # Create a dictionary for the headers and header values
-    headers = {}
-    for line in data_match['headers'].split('\n'):
-      if not line: continue
-      key, value = split(': ', line, 1)
-      headers[key] = value
-
-    # Optional payload in data
-    payload = data_match['payload']
-
-    return headers, payload
-
-  # Failed to parse incomnig data, exit
-  except:
-    sys.stderr.write('Unable parse incoming data: ', data, '\n')
-    sys.exit(FAILURE)
+    sys.exit(code)
 
 """
   register()
@@ -281,13 +262,32 @@ def show_main_menu():
     elif action == 2:
       register()
 
+"""
+  connect()
+
+  Try to connect to the configured server. If connection is unsuccessful, exit.
+"""
+def connect(server_address):
+  # Connect to the server
+  try:
+    sock = socket(AF_INET, SOCK_STREAM)
+    sock.connect(server_address)
+
+    global client_socket
+    client_socket = ClientServerConnection(sock)
+
+  # Failed to connect to server, exit
+  except:
+    sys.stderr.write('Unable to connect to the server\n')
+    sys.exit(FAILURE)
+
 def main():
   connect(SERVER_ADDRESS)
   show_main_menu()
-  exit(SUCCESS)
+  sys.exit(SUCCESS)
 
 if __name__ == "__main__":
   try:
     main()
   except KeyboardInterrupt:
-    exit(SUCCESS)
+    sys.exit(SUCCESS)
