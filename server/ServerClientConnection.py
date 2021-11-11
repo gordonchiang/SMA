@@ -92,7 +92,7 @@ class Connection:
 
       return headers, payload
 
-    # Failed to parse incomnig data, exit
+    # Failed to parse incoming data, exit
     except:
       sys.stderr.write('Unable to parse incoming data: ', data, '\n')
       sys.exit(1)
