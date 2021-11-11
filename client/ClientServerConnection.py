@@ -32,7 +32,11 @@ class ClientServerConnection:
 
   # Close the socket and exit the client
   def disconnect(self, code):
-    if code == 0: self.socket.shutdown(SHUT_RDWR)
+    if code == 0:
+      try:
+        self.socket.shutdown(SHUT_RDWR)
+      except:
+        pass
     self.socket.close()
     sys.exit(code)
 
