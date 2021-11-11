@@ -32,7 +32,7 @@ def connect(server_address):
 
 def main():
   client_socket = connect(SERVER_ADDRESS)
-  show_main_menu(client_socket)
+  show_auth_menu(client_socket)
   show_chat_menu(client_socket)
   sys.exit(0)
 

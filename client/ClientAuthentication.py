@@ -48,12 +48,12 @@ def login(client_socket):
     return 1
 
 """
-  show_main_menu()
+  show_auth_menu()
 
   Ask the user to login to an existing account or register a new account. Once
   a user logs in successfully, messaging features are unlocked.
 """
-def show_main_menu(client_socket):
+def show_auth_menu(client_socket):
   while True:
     # Display available options
     print('1. Enter `1` to login to an existing account')
