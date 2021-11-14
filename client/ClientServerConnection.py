@@ -13,7 +13,7 @@ class ClientServerConnection:
 
   def set_username(self, username):
     self.username = username
-  
+
   def get_username(self):
     return self.username
 
@@ -38,7 +38,6 @@ class ClientServerConnection:
       except:
         pass
     self.socket.close()
-    sys.exit(code)
 
   """
     parse_incoming()

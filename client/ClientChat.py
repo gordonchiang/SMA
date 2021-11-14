@@ -116,5 +116,6 @@ def show_chat_menu(client_socket):
 
   chat_button = tkinter.Button(root, text='Chat', command=lambda: initialize_chat(client_socket, root)).pack()
   exit_button = tkinter.Button(root, text='Exit', command=lambda: client_socket.disconnect(0)).pack()
+  #initialize_chat(client_socket, root)
 
   root.mainloop()

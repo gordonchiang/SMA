@@ -4,22 +4,14 @@
   Accept user-inputted username and password and attempt to create a new account
   on the server with these credentials.
 """
-def register(client_socket):
-  user = input('Username: ')
-  pw = input('Password (insecure!): ')
+def register(client_socket,user,pw):
   message = 'event: register\nusername: {}\npassword: {}\n\n'.format(user, pw)
   client_socket.send(message)
-
   response = client_socket.receive()
-
   headers, _ = client_socket.parse_incoming(response)
-
   if headers['event'] == 'register' and headers['status'] == 'success':
-    print('Registration succeeded!\n')
     return 0
-
   else:
-    print('Registration failed!\n')
     return 1
 
 """
@@ -28,49 +20,30 @@ def register(client_socket):
   Accept user-inputted username and password and attempt to login to the server
   with these credentials.
 """
-def login(client_socket):
-  user = input('Username: ')
-  pw = input('Password (insecure!): ')
+def login(client_socket,user,pw):
   message = 'event: login\nusername: {}\npassword: {}\n\n'.format(user, pw)
   client_socket.send(message)
-
   response = client_socket.receive()
-
   headers, _ = client_socket.parse_incoming(response)
-
   if headers['event'] == 'login' and headers['status'] == 'success':
     client_socket.set_username(user)
-    print('Login succeeded!\n')
     return 0
-
   else:
-    print('Login failed!\n')
     return 1
 
-"""
-  show_auth_menu()
+def logout(client_socket):
+    client_socket.disconnect(1)
 
-  Ask the user to login to an existing account or register a new account. Once
-  a user logs in successfully, messaging features are unlocked.
-"""
-def show_auth_menu(client_socket):
-  while True:
-    # Display available options
-    print('1. Enter `1` to login to an existing account')
-    print('2. Enter `2` to register a new account')
-
-    # Request user input
-    action = input('What would you like to do? ')
-
-    # Error checking on user input
-    if not action.isdecimal(): continue
-    action = int(action)
-
-    # Login to an existing account
-    if action == 1:
-      login_status = login(client_socket)
-      if login_status == 0: return 0 # Proceed to next state
-
-    # Register a new account
-    elif action == 2:
-      register(client_socket)
+def passwordCheck(password):
+    import re
+    if(' ' in password):
+        return (False,"Password must not include space")
+    if(len(password) < 8):
+        return (False,"Password must be longer than 8 characters")
+    if(not re.search("[a-z]",password)):
+        return (False,"Password contain both uppercase and lowercase letters")
+    if(not re.search("[A-Z]",password)):
+        return (False,"Password contain both uppercase and lowercase letters")
+    if(not re.search("[0-9]",password)):
+        return (False,"Password contain both letters and numbers")
+    return (True,"Valid password")
