@@ -33,7 +33,7 @@ def register_new_user(client_socket, db, username, password):
 
   Delete a user account in the SQL database.
 """
-def delete_user(client_socket, db, username, password):
+def delete_user(client_socket, db, username, pw):
   try:
     # Connect to the database
     conn = sqlite3.connect(db)
@@ -41,21 +41,22 @@ def delete_user(client_socket, db, username, password):
 
     # Insert new user credentials and save the database
     cursor.execute('''
-       DELETE username FROM users
+       DELETE FROM users
        WHERE username = ? AND password = ?
-      ''', (username, password))
+      ''', (username,pw))
     conn.commit()
 
   # If any error arises, fail registration and notify client
-  except:
+  except Exception as e:
     conn.close()
-    client_socket.send('event: register\nstatus: failure\n\n'.encode())
+    client_socket.send('event: delete\nstatus: failure\n\n'.encode())
+    print(e)
     print("fuck")
 
   # Notify client of successful registration
   else:
     conn.close()
-    client_socket.send('event: register\nstatus: success\n\n'.encode())
+    client_socket.send('event: delete\nstatus: success\n\n'.encode())
 
 """
   client_login()

@@ -33,7 +33,6 @@ def connect(server_address):
     sys.exit(1)
 
 def main():
-    SERVER_ADDRESS = ('localhost', 9000)
     with open("./client/config.json") as jfile:
         savedData = json.load(jfile)
 
