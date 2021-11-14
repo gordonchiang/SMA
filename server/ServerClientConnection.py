@@ -56,6 +56,9 @@ class Connection:
       elif event == 'register':
           register_new_user(self.client_socket, self.users_database, headers['username'], headers['password'])
 
+      elif event == 'delete':
+          delete_user(self.client_socket, self.users_database, headers['username'], headers['password'])
+
     except:
       print('Error processing data')
 
