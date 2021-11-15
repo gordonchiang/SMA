@@ -1,4 +1,4 @@
-certificate.crt
-key.pem
-users.db
+*.crt
+*.pem
+*.db
 __pycache__
