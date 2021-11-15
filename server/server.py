@@ -26,17 +26,8 @@ def create_users_database():
   # Create the database if it does not exist
   cursor.execute('''
     CREATE TABLE IF NOT EXISTS users(
-      username TEXT PRIMARY KEY NOT NULL,
+      username TEXT PRIMARY KEY,
       password TEXT NOT NULL
-    )
-  ''')
-
-  cursor.execute('''
-    CREATE TABLE IF NOT EXISTS chat_history(
-      id INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL,
-      sender TEXT NOT NULL,
-      recipient TEXT NOT NULL,
-      hashed_msg TEXT
     )
   ''')
 
