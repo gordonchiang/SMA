@@ -26,8 +26,9 @@ def create_users_database():
   # Create the database if it does not exist
   cursor.execute('''
     CREATE TABLE IF NOT EXISTS users(
-      username TEXT PRIMARY KEY,
-      password TEXT NOT NULL
+      username TEXT PRIMARY KEY NOT NULL,
+      password_hash TEXT NOT NULL,
+      salt TEXT NOT NULL
     )
   ''')
 
