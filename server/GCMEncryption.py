@@ -1,6 +1,6 @@
 import os
-from cryptography.hazmat.primitives.ciphers.aead import AESGCM
 import sqlite3
+from cryptography.hazmat.primitives.ciphers.aead import AESGCM
 
 USERS_DATABASE = 'users.db'
 NONCE_SIZE = 16
