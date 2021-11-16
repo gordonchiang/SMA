@@ -20,7 +20,10 @@ class Connection:
 
   # Close the socket to the client
   def disconnect(self):
-    self.client_socket.shutdown(SHUT_RDWR)
+    try:
+      self.client_socket.shutdown(SHUT_RDWR)
+    except:
+      pass
     self.client_socket.close()
     return 1
 
@@ -34,11 +37,13 @@ class Connection:
 
   # Process data incoming from the client
   def process_data(self):
-    data = self.client_socket.recv(1024).decode()
-
-    if not data: return self.disconnect()
-
     try:
+      # Retrieve data from socket
+      data = self.client_socket.recv(1024).decode()
+
+      # Connection closed by client
+      if not data: return self.disconnect()
+
       headers, payload = self.parse_incoming(data)
 
       event = headers['event']
@@ -60,8 +65,13 @@ class Connection:
       elif event == 'delete':
         delete_user(self.client_socket, self.users_database, headers['username'], headers['password'])
 
-    except:
+    # Connection closed by client
+    except ConnectionResetError as e:
+      return self.disconnect()
+
+    except Exception as e:
       print('Error processing data')
+      print(e)
 
   """
     relay_message()

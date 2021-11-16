@@ -27,17 +27,17 @@ class ClientServerConnection:
     data = self.socket.recv(buffer_size)
     if not data:
       sys.stderr.write('The connection to the server has been closed! Please try again later.\n')
-      self.disconnect(1)
+      self.disconnect()
     return data.decode()
 
   # Close the socket and exit the client
-  def disconnect(self, code):
-    if code == 0:
-      try:
-        self.socket.shutdown(SHUT_RDWR)
-      except:
-        pass
+  def disconnect(self):
+    try:
+      self.socket.shutdown(SHUT_RDWR)
+    except:
+      pass
     self.socket.close()
+    sys.exit(1)
 
   """
     parse_incoming()
@@ -62,7 +62,7 @@ class ClientServerConnection:
 
       return headers, payload
 
-    # Failed to parse incomnig data, exit
+    # Failed to parse incoming data, exit
     except:
-      sys.stderr.write('Unable to parse incoming data: ', data, '\n')
+      sys.stderr.write('Unable to parse incoming data')
       sys.exit(1)
