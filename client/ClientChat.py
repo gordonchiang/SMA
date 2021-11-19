@@ -32,17 +32,26 @@ class Chat:
     def get_input(_):
       payload = input_text.get()
       message_entry.delete(0, tkinter.END) # Clear input field
+
+      # Build and send message to recipient
       headers = 'event: outgoing\nusername: {}\nto: {}\ntype: text\n\n'.format(self.username, self.recipient)
       self.client_socket.send(headers + payload)
+
+      # Display the message in the chat window
       self.load_message(self.username, 'text', payload)
 
     # Callback to update the chat window with messages every second
     def display_conversation():
       while not self.message_queue.empty():
         try:
+          # Get new messages to load into the chat window
           sender, message_type, message = self.message_queue.get_nowait()
+
+          # Simply print text messages
           if message_type == 'text':
             conversation.insert(tkinter.END, '{}: {}\n'.format(sender, message))
+
+          # Convert images back to image format and display them
           elif message_type == 'image':
             conversation.insert(tkinter.END, '{}:\n'.format(sender))
 
@@ -53,7 +62,7 @@ class Chat:
             image = Image.open(io.BytesIO(image_data))
             img = ImageTk.PhotoImage(image)
 
-            # Prevent image from being garbage-collected
+            # Prevent image from being garbage-collected; persist in chat window
             self.conversation_picture_history.put(img) 
 
             # Create image on the GUI
@@ -61,10 +70,9 @@ class Chat:
             conversation.insert(tkinter.END, '\n')
             
         except Exception as e:
-          raise e
           continue
 
-      chat_window.after(1000, display_conversation)
+      chat_window.after(500, display_conversation) # Update the window
 
     # Callback to select an image to send to the recipient
     def get_image():
@@ -121,6 +129,7 @@ def initialize_chat(client_socket, root):
     chats[recipient].chat()
     recipient_window.destroy()
 
+  # Load menu to select recipients with whom to chat
   label = tkinter.Label(recipient_window, text='Recipient').pack(side=tkinter.LEFT)
   input_text = tkinter.StringVar()
   recipient_entry = tkinter.Entry(recipient_window, textvariable=input_text)
@@ -142,8 +151,7 @@ def listen(client_socket):
     recipient = headers['from']
     if event == 'incoming':
       if recipient not in chats: chats[recipient] = Chat(recipient)
-      message_type = headers['type']
-      chats[recipient].load_message(recipient, message_type, payload)
+      chats[recipient].load_message(recipient, headers['type'], payload)
 
 """
   show_messaging_menu()
@@ -158,6 +166,6 @@ def show_chat_menu(client_socket):
   root = tkinter.Tk()
 
   chat_button = tkinter.Button(root, text='Chat', command=lambda: initialize_chat(client_socket, root)).pack()
-  exit_button = tkinter.Button(root, text='Exit', command=lambda: client_socket.disconnect()).pack()
+  exit_button = tkinter.Button(root, text='Exit', command=client_socket.disconnect).pack()
 
   root.mainloop()

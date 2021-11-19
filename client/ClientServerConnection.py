@@ -69,5 +69,4 @@ class ClientServerConnection:
     # Failed to parse incoming data, exit
     except Exception as e:
       sys.stderr.write('Unable to parse incoming data\n')
-      print(e)
       sys.exit(1)
