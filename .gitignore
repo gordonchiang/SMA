@@ -2,3 +2,4 @@
 *.pem
 *.db
 __pycache__
+*.gif
