@@ -19,7 +19,7 @@ class Chat:
     self.root = root
     self.username = client_socket.get_username()
     self.recipient = recipient
-    self.message_queue = Queue() # (type, message)
+    self.message_queue = Queue() # (username, type, message)
     self.conversation = ''
     self.conversation_picture_history = Queue()
 
