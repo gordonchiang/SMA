@@ -32,7 +32,7 @@ def login(client_socket,user,pw):
     return 1
 
 def logout(client_socket):
-    client_socket.disconnect(1)
+    client_socket.disconnect()
 
 def deleteAccount(client_socket,pw):
     message = 'event: delete\nusername: {}\npassword: {}\n\n'.format(client_socket.get_username(), pw)
@@ -40,7 +40,7 @@ def deleteAccount(client_socket,pw):
     response = client_socket.receive()
     headers, _ = client_socket.parse_incoming(response)
     if headers['event'] == 'delete' and headers['status'] == 'success':
-      client_socket.disconnect(1)
+      client_socket.disconnect()
       return 0
     else:
       return 1

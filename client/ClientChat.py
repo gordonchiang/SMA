@@ -1,6 +1,9 @@
 from queue import Queue
 from threading import Thread
 import tkinter
+import tkinter.filedialog
+from PIL import Image
+import io
 
 chats = {}
 
@@ -16,7 +19,7 @@ class Chat:
     self.root = root
     self.username = client_socket.get_username()
     self.recipient = recipient
-    self.message_queue = Queue()
+    self.message_queue = Queue() # (type, message)
     self.conversation = ''
 
   # Open a chat window: accept input to send as messages and update the window
@@ -28,20 +31,49 @@ class Chat:
     def get_input(_):
       payload = input_text.get()
       message_entry.delete(0, tkinter.END) # Clear input field
-      headers = 'event: outgoing\nusername: {}\nto: {}\n\n'.format(self.username, self.recipient)
+      headers = 'event: outgoing\nusername: {}\nto: {}\ntype: text\n\n'.format(self.username, self.recipient)
       self.client_socket.send(headers + payload)
-      self.load_message('{}: {}'.format(self.username, payload))
+      self.load_message(self.username, 'text', payload)
 
     # Callback to update the chat window with messages every second
     def display_conversation():
       while not self.message_queue.empty():
         try:
-          text = self.message_queue.get_nowait()
-          conversation.insert(tkinter.END, text)
-        except:
+          sender, message_type, message = self.message_queue.get_nowait()
+          if message_type == 'text':
+            conversation.insert(tkinter.END, '{}: {}\n'.format(sender, message))
+          elif message_type == 'image':
+            conversation.insert(tkinter.END, '{}:\n'.format(sender))
+            image_data = bytes(message, encoding='latin1')
+            fd = open('test.gif', 'wb')
+            fd.write(image_data)
+            fd.close()
+            
+            # image = Image.open(io.BytesIO(image_data))
+            global img
+            img = tkinter.PhotoImage(file='test.gif')
+
+            conversation.image_create(tkinter.END, image=img)
+            
+        except Exception as e:
+          raise e
           continue
 
       chat_window.after(1000, display_conversation)
+
+    # Callback to select an image to send to the recipient
+    def get_image():
+      image_path = tkinter.filedialog.askopenfilename(initialdir='/', title='Select image', filetypes=(('gif files','*.gif'),))
+      if image_path:
+        fd = open(image_path, 'rb')
+        payload = fd.read()
+        fd.close()
+
+        payload = payload.decode(encoding='latin1')
+
+        headers = 'event: outgoing\nusername: {}\nto: {}\ntype: image\n\n'.format(self.username, self.recipient)
+        self.client_socket.send(headers + payload)
+        self.load_message(self.username, 'image', payload)
 
     # Create a Text widget to display the messages
     conversation = tkinter.Text(chat_window)
@@ -59,9 +91,14 @@ class Chat:
     message_entry.pack()
     message_entry.bind('<Return>', get_input)
 
+    # Request image from the user
+    image_entry = tkinter.Button(chat_window, text='Image', command=get_image)
+    image_entry.pack()
+
   # Queue messages so they get loaded into the chat window in order
-  def load_message(self, message):
-    self.message_queue.put_nowait(message + '\n')
+  def load_message(self, sender, message_type, message):
+    self.message_queue.put_nowait((sender, message_type, message))
+
 
 """
   initialize_chat()
@@ -100,7 +137,8 @@ def listen(client_socket):
     recipient = headers['from']
     if event == 'incoming':
       if recipient not in chats: chats[recipient] = Chat(recipient)
-      chats[recipient].load_message('{}: {}'.format(recipient, payload))
+      message_type = headers['type']
+      chats[recipient].load_message(recipient, message_type, payload)
 
 """
   show_messaging_menu()
@@ -115,7 +153,6 @@ def show_chat_menu(client_socket):
   root = tkinter.Tk()
 
   chat_button = tkinter.Button(root, text='Chat', command=lambda: initialize_chat(client_socket, root)).pack()
-  exit_button = tkinter.Button(root, text='Exit', command=lambda: client_socket.disconnect(0)).pack()
-  #initialize_chat(client_socket, root)
+  exit_button = tkinter.Button(root, text='Exit', command=lambda: client_socket.disconnect()).pack()
 
   root.mainloop()
