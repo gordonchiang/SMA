@@ -69,7 +69,11 @@ class Chat:
             conversation.image_create(tkinter.END, image=img)
             conversation.insert(tkinter.END, '\n')
 
-          self.save_history(sender, message_type, message)
+          # Server message
+          else:
+            conversation.insert(tkinter.END, '{}\n'.format(message))
+
+          if not message_type == 'server': self.save_history(sender, message_type, message)
             
         except Exception as e:
           continue
@@ -154,8 +158,17 @@ def listen(client_socket):
 
     headers, payload = client_socket.parse_incoming(data)
     event = headers['event']
-    recipient = headers['from']
+
+    # Message from recipient
     if event == 'incoming':
+      recipient = headers['from']
+      if recipient not in chats: chats[recipient] = Chat(recipient)
+      chats[recipient].load_message(recipient, headers['type'], payload)
+
+    # Message from server reflecting the outgoing messaging back to client
+    # indicating an error
+    elif event == 'outgoing' and headers['status'] == 'failure' and headers['type'] == 'server':
+      recipient = headers['to']
       if recipient not in chats: chats[recipient] = Chat(recipient)
       chats[recipient].load_message(recipient, headers['type'], payload)
 

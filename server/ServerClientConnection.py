@@ -70,7 +70,7 @@ class Connection:
       return self.disconnect()
 
     except Exception as e:
-      print('Error processing data')
+      print('Error processing parsed data')
       print(e)
 
   """
@@ -86,7 +86,11 @@ class Connection:
       raise ValueError
 
     message = 'event: incoming\nfrom: {}\ntype: {}\n\n'.format(self.username, message_type) + payload
-    username_connections[recipient].get_client_socket().send(message.encode())
+    try:
+      username_connections[recipient].get_client_socket().send(message.encode())
+    except:
+      error_message = 'event: outgoing\nto: {}\ntype: server\nstatus: failure\n\nRecipient is not online!'.format(recipient)
+      username_connections[self.username].get_client_socket().send(error_message.encode())
 
   """
     parse_incoming()
@@ -113,6 +117,6 @@ class Connection:
 
     # Failed to parse incoming data, exit
     except Exception as e:
-      sys.stderr.write('Unable to parse incoming data\n')
+      sys.stderr.write('Error parsing incoming data\n')
       print(e)
       sys.exit(1)
