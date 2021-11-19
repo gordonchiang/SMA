@@ -21,6 +21,7 @@ class Chat:
     self.recipient = recipient
     self.message_queue = Queue() # (type, message)
     self.conversation = ''
+    self.conversation_picture_history = Queue()
 
   # Open a chat window: accept input to send as messages and update the window
   # with incoming messages
@@ -50,10 +51,11 @@ class Chat:
             fd.close()
             
             # image = Image.open(io.BytesIO(image_data))
-            global img
             img = tkinter.PhotoImage(file='test.gif')
+            self.conversation_picture_history.put(img) # Prevent image from being garbage-collected
 
             conversation.image_create(tkinter.END, image=img)
+            conversation.insert(tkinter.END, '\n')
             
         except Exception as e:
           raise e
