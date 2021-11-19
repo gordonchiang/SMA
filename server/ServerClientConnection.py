@@ -80,6 +80,11 @@ class Connection:
     an outgoing message. Send the outgoing message to the recipient.
   """
   def relay_message(self, recipient, message_type, payload):
+    # Check if message type is valid
+    if message_type not in ['text', 'image']:
+      sys.stderr.write('Invalid message type received\n')
+      raise ValueError
+
     message = 'event: incoming\nfrom: {}\ntype: {}\n\n'.format(self.username, message_type) + payload
     username_connections[recipient].get_client_socket().send(message.encode())
 

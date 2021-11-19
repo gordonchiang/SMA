@@ -68,6 +68,8 @@ class Chat:
             # Create image on the GUI
             conversation.image_create(tkinter.END, image=img)
             conversation.insert(tkinter.END, '\n')
+
+          self.save_history(sender, message_type, message)
             
         except Exception as e:
           continue
@@ -107,6 +109,10 @@ class Chat:
     # Request image from the user
     image_entry = tkinter.Button(chat_window, text='Image', command=get_image)
     image_entry.pack()
+
+  # Save history of chat between self.username and self.recipient
+  def save_history(self, sender, message_type, message):
+    pass # TODO
 
   # Queue messages so they get loaded into the chat window in order
   def load_message(self, sender, message_type, message):
