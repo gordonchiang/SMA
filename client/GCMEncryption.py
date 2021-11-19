@@ -20,6 +20,7 @@ AD = b'GCMAuthenticationData'
 class DH_Keys:
 	#
 	# Initialize private and public keys
+	# Note that Ephemeral Diffie-Hellman is used here to ensure perfect forward secrecy
 	#
 	def __init__(self):
 		self.priv_key = parameters.generate_private_key()
@@ -36,13 +37,13 @@ class DH_Keys:
 #
 # If both keys match, encryption/decryption can proceed
 #
-def DH(shared_key_a, shared_key_b):
+def DH_check(shared_key_a, shared_key_b):
 	if(shared_key_a == shared_key_b):
 		print("Successful Diffie-Hellman!")
 		return True
 
 #
-# Symmetric cryptography using diffie-hellman key (key must be 128, 192, or 256 bits)
+# Symmetric cryptography using Diffie-Hellman key (key must be 128, 192, or 256 bits)
 # Message must be in bytes for aesgcm to encrypt
 # Nonce is never reused, size is 16 bytes
 # Nonce is stored with the cipher since it does not need to be secret
@@ -56,7 +57,7 @@ def encrypt_message(message, key):
 	return cipher
 
 #
-# Symmetric cryptography using diffie-hellman key (must be 128, 192, or 256 bits)
+# Symmetric cryptography using Diffie-Hellman key (must be 128, 192, or 256 bits)
 # First 16 bytes used as nonce, rest are the cipher
 #
 def decrypt_message(cipher, key):
@@ -68,13 +69,16 @@ def decrypt_message(cipher, key):
 # Used for debug purposes
 #
 def main():
+	# A would be the sender, B would be the recipient
 	A = DH_Keys()
 	B = DH_Keys()
 
+	# Generate shared keys
 	A_shared_key = A.gen_shared_key(B.public_key)
 	B_shared_key = B.gen_shared_key(A.public_key)
 	
-	if(DH(A_shared_key, B_shared_key) == True):
+	# Diffie-Hellman to ensure shared keys match
+	if(DH_check(A_shared_key, B_shared_key) == True):
 		input_msg = input("Input: ")
 		print("Shared DH key is:",A_shared_key)
 		encrypted_msg = encrypt_message(input_msg, A_shared_key)
