@@ -152,7 +152,7 @@ def initialize_chat(client_socket, root):
   Listen for incoming data from the server. Parse incoming data and dispatch the
   incoming user messages accordingly.
 """
-def listen(client_socket):
+def listen(client_socket, root):
   while True:
     data = client_socket.receive()
 
@@ -162,14 +162,14 @@ def listen(client_socket):
     # Message from recipient
     if event == 'incoming':
       recipient = headers['from']
-      if recipient not in chats: chats[recipient] = Chat(recipient)
+      if recipient not in chats: chats[recipient] = Chat(client_socket, root, recipient)
       chats[recipient].load_message(recipient, headers['type'], payload)
 
     # Message from server reflecting the outgoing messaging back to client
     # indicating an error
     elif event == 'outgoing' and headers['status'] == 'failure' and headers['type'] == 'server':
       recipient = headers['to']
-      if recipient not in chats: chats[recipient] = Chat(recipient)
+      if recipient not in chats: chats[recipient] = Chat(client_socket, root, recipient)
       chats[recipient].load_message(recipient, headers['type'], payload)
 
 """
@@ -178,11 +178,11 @@ def listen(client_socket):
   Prompt the logged in user for messaging actions.
 """
 def show_chat_menu(client_socket):
-  # Spawn a new thread to listen for data pushes from the server
-  listener = Thread(target=listen, args=(client_socket,), daemon=True)
-  listener.start()
-
   root = tkinter.Tk()
+
+  # Spawn a new thread to listen for data pushes from the server
+  listener = Thread(target=listen, args=(client_socket,root), daemon=True)
+  listener.start()
 
   chat_button = tkinter.Button(root, text='Chat', command=lambda: initialize_chat(client_socket, root)).pack()
   exit_button = tkinter.Button(root, text='Exit', command=client_socket.disconnect).pack()
