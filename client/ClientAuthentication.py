@@ -4,7 +4,9 @@
   Accept user-inputted username and password and attempt to create a new account
   on the server with these credentials.
 """
-def register(client_socket,user,pw):
+def register(client_socket, user, pw):
+  if not user or not pw: return 1
+
   message = 'event: register\nusername: {}\npassword: {}\n\n'.format(user, pw)
   client_socket.send(message)
   response = client_socket.receive()
@@ -20,7 +22,9 @@ def register(client_socket,user,pw):
   Accept user-inputted username and password and attempt to login to the server
   with these credentials.
 """
-def login(client_socket,user,pw):
+def login(client_socket, user, pw):
+  if not user or not pw: return 1
+
   message = 'event: login\nusername: {}\npassword: {}\n\n'.format(user, pw)
   client_socket.send(message)
   response = client_socket.receive()
@@ -34,7 +38,9 @@ def login(client_socket,user,pw):
 def logout(client_socket):
     client_socket.disconnect()
 
-def deleteAccount(client_socket,pw):
+def deleteAccount(client_socket, pw):
+    if not pw: return 1
+
     message = 'event: delete\nusername: {}\npassword: {}\n\n'.format(client_socket.get_username(), pw)
     client_socket.send(message)
     response = client_socket.receive()
