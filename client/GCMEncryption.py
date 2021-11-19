@@ -36,8 +36,8 @@ class DH_Keys:
 #
 # If both keys match, encryption/decryption can proceed
 #
-def DH(shared_key1, shared_key2):
-	if(shared_key1 == shared_key2):
+def DH(shared_key_a, shared_key_b):
+	if(shared_key_a == shared_key_b):
 		print("Successful Diffie-Hellman!")
 		return True
 
