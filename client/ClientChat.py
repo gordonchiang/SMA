@@ -2,7 +2,7 @@ from queue import Queue
 from threading import Thread
 import tkinter
 import tkinter.filedialog
-from PIL import Image
+from PIL import Image, ImageTk
 import io
 
 chats = {}
@@ -45,15 +45,18 @@ class Chat:
             conversation.insert(tkinter.END, '{}: {}\n'.format(sender, message))
           elif message_type == 'image':
             conversation.insert(tkinter.END, '{}:\n'.format(sender))
-            image_data = bytes(message, encoding='latin1')
-            fd = open('test.gif', 'wb')
-            fd.write(image_data)
-            fd.close()
-            
-            # image = Image.open(io.BytesIO(image_data))
-            img = tkinter.PhotoImage(file='test.gif')
-            self.conversation_picture_history.put(img) # Prevent image from being garbage-collected
 
+            # Convert image from string to bytes
+            image_data = bytes(message, encoding='latin1')
+  
+            # Open the image from memory to avoid saving to disk
+            image = Image.open(io.BytesIO(image_data))
+            img = ImageTk.PhotoImage(image)
+
+            # Prevent image from being garbage-collected
+            self.conversation_picture_history.put(img) 
+
+            # Create image on the GUI
             conversation.image_create(tkinter.END, image=img)
             conversation.insert(tkinter.END, '\n')
             
@@ -71,7 +74,7 @@ class Chat:
         payload = fd.read()
         fd.close()
 
-        payload = payload.decode(encoding='latin1')
+        payload = payload.decode(encoding='latin1') # Encode bytes to string for transmission
 
         headers = 'event: outgoing\nusername: {}\nto: {}\ntype: image\n\n'.format(self.username, self.recipient)
         self.client_socket.send(headers + payload)
