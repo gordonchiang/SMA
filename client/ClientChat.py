@@ -28,6 +28,10 @@ class Chat:
   def chat(self):
     chat_window = tkinter.Toplevel(self.root)
 
+    # Style chat window
+    chat_window.title('{} - chatting with {}'.format(self.username, self.recipient))
+    tkinter.Label(chat_window, text='Chatting with: {}'.format(self.recipient)).pack(fill=tkinter.X)
+
     # Callback to get input from user to send to recipient
     def get_input(_):
       payload = input_text.get()
@@ -111,7 +115,7 @@ class Chat:
     message_entry.bind('<Return>', get_input)
 
     # Request image from the user
-    image_entry = tkinter.Button(chat_window, text='Image', command=get_image)
+    image_entry = tkinter.Button(chat_window, text='Send Image', command=get_image)
     image_entry.pack()
 
   # Save history of chat between self.username and self.recipient
@@ -179,6 +183,11 @@ def listen(client_socket, root):
 """
 def show_chat_menu(client_socket):
   root = tkinter.Tk()
+
+  # Style chat menu window
+  root.geometry('300x100')
+  root.title('{} - chat menu'.format(client_socket.get_username()))
+  tkinter.Label(root, text='Logged in as: {}'.format(client_socket.get_username())).pack(fill=tkinter.X)
 
   # Spawn a new thread to listen for data pushes from the server
   listener = Thread(target=listen, args=(client_socket,root), daemon=True)
