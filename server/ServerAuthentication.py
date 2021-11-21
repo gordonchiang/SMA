@@ -90,7 +90,6 @@ def client_login(connection, db, username, password):
   except Exception as e:
     conn.close()
     print(e)
-    raise(e)
     client_socket.send('event: login\nstatus: failure\n\n'.encode())
     return None
 

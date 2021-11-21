@@ -39,7 +39,7 @@ class Connection:
   def process_data(self):
     try:
       # Retrieve data from socket
-      data = self.client_socket.recv(1024).decode()
+      data = self.client_socket.recv(1024*30).decode()
 
       # Connection closed by client
       if not data: return self.disconnect()
@@ -50,7 +50,7 @@ class Connection:
 
       # The client has sent an outgoing message, forward it to the recipient
       if event == 'outgoing':
-        self.relay_message(headers['to'], payload)
+        self.relay_message(headers['to'], headers['type'], payload)
 
       # Authenticate the client
       elif event == 'login':
@@ -70,7 +70,7 @@ class Connection:
       return self.disconnect()
 
     except Exception as e:
-      print('Error processing data')
+      print('Error processing parsed data')
       print(e)
 
   """
@@ -79,9 +79,18 @@ class Connection:
     Receive an incoming message from the source. Convert the incoming message into
     an outgoing message. Send the outgoing message to the recipient.
   """
-  def relay_message(self, recipient, payload):
-    message = 'event: incoming\nfrom: {}\n\n'.format(self.username) + payload
-    username_connections[recipient].get_client_socket().send(message.encode())
+  def relay_message(self, recipient, message_type, payload):
+    # Check if message type is valid
+    if message_type not in ['text', 'image']:
+      sys.stderr.write('Invalid message type received\n')
+      raise ValueError
+
+    message = 'event: incoming\nfrom: {}\ntype: {}\n\n'.format(self.username, message_type) + payload
+    try:
+      username_connections[recipient].get_client_socket().send(message.encode())
+    except:
+      error_message = 'event: outgoing\nto: {}\ntype: server\nstatus: failure\n\nRecipient is not online!'.format(recipient)
+      username_connections[self.username].get_client_socket().send(error_message.encode())
 
   """
     parse_incoming()
@@ -92,7 +101,7 @@ class Connection:
   def parse_incoming(data):
     try:
       # Scan for the headers and the payload in the incoming data
-      data_match = match('^(?P<headers>.*\n)\n(?P<payload>.*)$', data, flags=DOTALL)
+      data_match = match('^(?P<headers>.*?\n)\n(?P<payload>.*)$', data, flags=DOTALL)
 
       # Create a dictionary for the headers and header values
       headers = {}
@@ -107,6 +116,7 @@ class Connection:
       return headers, payload
 
     # Failed to parse incoming data, exit
-    except:
-      sys.stderr.write('Unable to parse incoming data: ', data, '\n')
+    except Exception as e:
+      sys.stderr.write('Error parsing incoming data\n')
+      print(e)
       sys.exit(1)
