@@ -65,11 +65,15 @@ def decrypt_message(cipher, key):
 	plaintext = aesgcm.decrypt(cipher[0:16], cipher[16:], AD)
 	return plaintext
 
+#
+# Ensures message integrity
+#
 def message_integrity(cipher, shared_key):
 	try:
 		decrypted_message = decrypt_message(cipher, shared_key)
 	except Exception as e:
 		print("Message not authenticated.")
+		return
 
 	return decrypted_message.decode()
 
