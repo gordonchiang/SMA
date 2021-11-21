@@ -65,6 +65,14 @@ def decrypt_message(cipher, key):
 	plaintext = aesgcm.decrypt(cipher[0:16], cipher[16:], AD)
 	return plaintext
 
+def message_integrity(cipher, shared_key):
+	try:
+		decrypted_message = decrypt_message(cipher, shared_key)
+	except Exception as e:
+		print("Message not authenticated.")
+
+	return decrypted_message.decode()
+
 #
 # Used for debug purposes
 #
@@ -81,12 +89,10 @@ def main():
 	if(DH_check(A_shared_key, B_shared_key) == True):
 		input_msg = input("Input: ")
 		print("Shared DH key is:",A_shared_key)
-		encrypted_msg = encrypt_message(input_msg, A_shared_key)
-		try:
-			decrypted_msg = decrypt_message(encrypted_msg, A_shared_key)
-			print("Your decrypted message is: " + decrypted_msg.decode())
-		except Exception as e:
-			print("Message not authenticated.")
+		cipher = encrypt_message(input_msg, A_shared_key)
+		
+		decrypted_message = message_integrity(cipher, A_shared_key)
+		print(decrypted_message)
 
 	else:
 		Print("Diffie-Hellman not established.")
