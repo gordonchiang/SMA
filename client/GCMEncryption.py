@@ -35,14 +35,6 @@ class DH_Keys:
 		return derived_key
 
 #
-# If both keys match, encryption/decryption can proceed
-#
-def DH_check(shared_key_a, shared_key_b):
-	if(shared_key_a == shared_key_b):
-		print("Successful Diffie-Hellman!")
-		return True
-
-#
 # Symmetric cryptography using Diffie-Hellman key (key must be 128, 192, or 256 bits)
 # Message must be in bytes for aesgcm to encrypt
 # Nonce is never reused, size is 16 bytes
@@ -62,20 +54,11 @@ def encrypt_message(message, key):
 #
 def decrypt_message(cipher, key):
 	aesgcm = AESGCM(key)
-	plaintext = aesgcm.decrypt(cipher[0:16], cipher[16:], AD)
-	return plaintext
-
-#
-# Ensures message integrity
-#
-def message_integrity(cipher, shared_key):
 	try:
-		decrypted_message = decrypt_message(cipher, shared_key)
+		plaintext = aesgcm.decrypt(cipher[0:16], cipher[16:], AD)
+		return plaintext.decode()
 	except Exception as e:
-		print("Message not authenticated.")
-		return
-
-	return decrypted_message.decode()
+		return "MESSAGE NOT AUTHENTICATED"
 
 #
 # Used for debug purposes
@@ -88,18 +71,13 @@ def main():
 	# Generate shared keys
 	A_shared_key = A.gen_shared_key(B.public_key)
 	B_shared_key = B.gen_shared_key(A.public_key)
-	
-	# Diffie-Hellman to ensure shared keys match
-	if(DH_check(A_shared_key, B_shared_key) == True):
-		input_msg = input("Input: ")
-		print("Shared DH key is:",A_shared_key)
-		cipher = encrypt_message(input_msg, A_shared_key)
-		
-		decrypted_message = message_integrity(cipher, A_shared_key)
-		print(decrypted_message)
 
-	else:
-		Print("Diffie-Hellman not established.")
+	input_msg = input("Input: ")
+	print("Shared DH key is:",A_shared_key)
+	cipher = encrypt_message(input_msg, A_shared_key)
+	
+	decrypted_message = decrypt_message(cipher, A_shared_key)
+	print(decrypted_message)
 
 if __name__ == "__main__":
 	main()
