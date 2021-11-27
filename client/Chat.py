@@ -1,8 +1,11 @@
+import io
+import json
+from PIL import Image, ImageTk
 from queue import Queue
 import tkinter
 import tkinter.filedialog
-from PIL import Image, ImageTk
-import io
+
+import MessageHistory
 
 """
   Chat
@@ -19,6 +22,8 @@ class Chat:
     self.message_queue = Queue() # (username, type, message)
     self.conversation = ''
     self.conversation_picture_history = Queue()
+
+    self.history = MessageHistory.Writer(self.username, self.recipient, 'public_key_from_json') # TODO: public key from json config
 
   # Open a chat window: accept input to send as messages and update the window
   # with incoming messages
@@ -51,6 +56,7 @@ class Chat:
           # Simply print text messages
           if message_type == 'text':
             conversation.insert(tkinter.END, '{}: {}\n'.format(sender, message))
+            self.history.save_to_history(sender, message_type, message) # Save to history
 
           # Convert images back to image format and display them
           elif message_type == 'image':
@@ -69,6 +75,8 @@ class Chat:
             # Create image on the GUI
             conversation.image_create(tkinter.END, image=img)
             conversation.insert(tkinter.END, '\n')
+
+            self.history.save_to_history(sender, message_type, message) # Save to history
 
           # Server message
           else:

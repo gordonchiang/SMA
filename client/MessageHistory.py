@@ -1,15 +1,14 @@
-import json
 from pathlib import Path
 import os
 import tkinter
 import tkinter.messagebox
 
 class Reader:
-  def __init__(self, root, username, recipient, key):
+  def __init__(self, root, username, recipient, private_key):
     self.username = username
     self.root = root
     self.recipient = recipient
-    self.key = key
+    self.private_key = private_key
 
     self.history = self.__open_history()
     if self.history is None:
@@ -46,7 +45,7 @@ class Reader:
     history_window.title('{} - message history with {}'.format(self.username, self.recipient))
     tkinter.Label(history_window, text='Message history with: {}'.format(self.recipient)).pack(fill=tkinter.X)
 
-    # Create a Text widget to display the messages
+    # Create a Text widget and display the plaintext history
     conversation = tkinter.Text(history_window)
     conversation.pack()
     conversation.insert(tkinter.END, self.history)
@@ -56,14 +55,31 @@ class Reader:
     tkinter.messagebox.showinfo('Error', 'History unavailable!')
 
 class Writer:
-  def __init__(self, username, recipient, key):
+  def __init__(self, username, recipient, public_key):
     self.username = username
     self.recipient = recipient
-    self.key = key
+    self.public_key = public_key
 
-  def __create_history_dir():
-    dir_path = os.path.dirname(os.path.realpath(__file__)) + self.username
+  def __open_history(self):
+    root_dir = os.path.dirname(os.path.realpath(__file__))
+    history_dir = Path(root_dir + '/{}'.format(self.username))
+    history_path = Path(root_dir + '/{}/{}.his'.format(self.username, self.recipient))
+
+    # Validate username and recipient input; enforce child path of ./client/
+    if not history_path.is_relative_to(root_dir):
+      return None
+
+    # Create the history directory for self.username if it doesn't exist
     try:
-      os.makedirs(dir_path)
+      os.makedirs(history_dir)
     except FileExistsError:
       pass
+
+    # Create a new history file or open an existing one
+    return open(history_path, 'a')
+
+  def save_to_history(self, sender, message_type, message):
+    record = '{};{};{}\n'.format(sender, message_type, message)
+    history_fd = self.__open_history()
+    history_fd.write(record)
+    history_fd.close()

@@ -28,9 +28,6 @@ def initialize_chat(client_socket, root):
   recipient_entry.pack(side=tkinter.RIGHT)
   recipient_entry.bind('<Return>', get_input)
 
-def show_history():
-  pass
-
 """
   initialize_message_history()
 
