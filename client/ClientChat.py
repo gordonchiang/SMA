@@ -1,6 +1,7 @@
 from threading import Thread
 import tkinter
 import Chat
+import MessageHistory
 
 chats = {}
 
@@ -36,7 +37,7 @@ def show_history():
   Open a GUI window to allow user to open a message history with a specific
   reicipient.
 """
-def initialize_message_history(root):
+def initialize_message_history(username, root):
   select_history_window = tkinter.Toplevel(root)
 
   # Callback function to get the recipient's username and open the history window
@@ -44,9 +45,8 @@ def initialize_message_history(root):
     recipient = recipient_text.get()
     key = key_text.get()
 
-    if recipient and key:
-      print(recipient, key)
-      # show_history(recipient)
+    if recipient and key: MessageHistory.Reader(root, username, recipient, key)
+
     select_history_window.destroy()
 
   # Load menu to load message history
@@ -96,19 +96,21 @@ def listen(client_socket, root):
   Prompt the logged in user for messaging actions.
 """
 def show_chat_menu(client_socket):
+  username = client_socket.get_username()
+
   root = tkinter.Tk()
 
   # Style chat menu window
   root.geometry('300x100')
-  root.title('{} - chat menu'.format(client_socket.get_username()))
-  tkinter.Label(root, text='Logged in as: {}'.format(client_socket.get_username())).pack(fill=tkinter.X)
+  root.title('{} - chat menu'.format(username))
+  tkinter.Label(root, text='Logged in as: {}'.format(username)).pack(fill=tkinter.X)
 
   # Spawn a new thread to listen for data pushes from the server
   listener = Thread(target=listen, args=(client_socket,root), daemon=True)
   listener.start()
 
   chat_button = tkinter.Button(root, text='Chat', command=lambda: initialize_chat(client_socket, root)).pack()
-  message_history_button = tkinter.Button(root, text='Message History', command=lambda: initialize_message_history(root)).pack()
+  message_history_button = tkinter.Button(root, text='Message History', command=lambda: initialize_message_history(username, root)).pack()
   exit_button = tkinter.Button(root, text='Exit', command=client_socket.disconnect).pack()
 
   root.mainloop()
