@@ -39,19 +39,30 @@ def show_history():
 def initialize_message_history(root):
   select_history_window = tkinter.Toplevel(root)
 
-  # Callback function to get the recipient's username and open the chat window
-  def get_input(_):
-    recipient = input_text.get()
-    
-    chats[recipient].chat()
-    recipient_window.destroy()
+  # Callback function to get the recipient's username and open the history window
+  def view_history():
+    recipient = recipient_text.get()
+    key = key_text.get()
 
-  # Load menu to select recipients with whom to chat
-  label = tkinter.Label(recipient_window, text='Recipient').pack(side=tkinter.LEFT)
-  input_text = tkinter.StringVar()
-  recipient_entry = tkinter.Entry(recipient_window, textvariable=input_text)
-  recipient_entry.pack(side=tkinter.RIGHT)
-  recipient_entry.bind('<Return>', get_input)
+    if recipient and key:
+      print(recipient, key)
+      # show_history(recipient)
+    select_history_window.destroy()
+
+  # Load menu to load message history
+  # Get history for recipient
+  recipient_label = tkinter.Label(select_history_window, text='Recipient').grid(row=0, column=0)
+  recipient_text = tkinter.StringVar()
+  recipient_entry = tkinter.Entry(select_history_window, textvariable=recipient_text)
+  recipient_entry.grid(row=0, column=1)
+
+  # Authenticate user to view and decrypt history
+  key_label = tkinter.Label(select_history_window, text='Passphrase').grid(row=1, column=0)
+  key_text = tkinter.StringVar()
+  key_entry = tkinter.Entry(select_history_window, textvariable=key_text)
+  key_entry.grid(row=1, column=1)
+
+  submit_button = tkinter.Button(select_history_window, text='Open History', command=view_history).grid(row=3, column=1)
 
 """
   listen()
