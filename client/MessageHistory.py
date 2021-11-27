@@ -11,41 +11,33 @@ class Reader:
     self.recipient = recipient
     self.key = key
 
-    self.history = None
-
-    print(self.recipient, self.key)
-
-    history_available = self.__open_history()
-    if history_available is False:
-      # TODO: show error popup
+    self.history = self.__open_history()
+    if self.history is None:
       self.__show_error()
-      pass
     else:
       self.__show_history()
-      pass
 
   def __open_history(self):
     root_dir = os.path.dirname(os.path.realpath(__file__))
-    history_path = Path(root_dir + '/{}/{}'.format(self.username, self.recipient))
+    history_path = Path(root_dir + '/{}/{}.his'.format(self.username, self.recipient))
 
     # Validate username and recipient input; enforce child path of ./client/
     if not history_path.is_relative_to(root_dir):
-      self.history = None
-      return False
+      return None
 
     try:
-      fd = open(dir_path, 'r')
+      fd = open(history_path, 'r')
     except:
-      self.history = None
-      return False
+      return None
     else:
       self.history = fd.read()
       fd.close()
-      return True
+      return self.history
 
   def __show_history(self):
+    # Display an error if no history to show
     if self.history is None:
-      # Show error popup
+      self.__show_error()
       return
 
     history_window = tkinter.Toplevel(self.root)
@@ -53,6 +45,11 @@ class Reader:
     # Style chat window
     history_window.title('{} - message history with {}'.format(self.username, self.recipient))
     tkinter.Label(history_window, text='Message history with: {}'.format(self.recipient)).pack(fill=tkinter.X)
+
+    # Create a Text widget to display the messages
+    conversation = tkinter.Text(history_window)
+    conversation.pack()
+    conversation.insert(tkinter.END, self.history)
 
   # Display an error if unable to show history (no history, unauth, etc.)
   def __show_error(self):
