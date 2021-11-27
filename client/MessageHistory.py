@@ -1,4 +1,8 @@
+import io
 from pathlib import Path
+from PIL import Image, ImageTk
+from queue import Queue
+from re import match, split
 import os
 import tkinter
 import tkinter.messagebox
@@ -29,13 +33,28 @@ class Reader:
     except:
       return None
     else:
-      self.history = fd.read()
+      history = fd.read()
       fd.close()
-      return self.history
+      return self.__decode_history(history)
+
+  def __decode_history(self, history):
+    decoded_history = Queue()
+
+    messages = split('\n', history)
+    for message in messages:
+      if not message: continue
+      message_match = match('^(?P<sender>.*?);(?P<type>.*?);(?P<payload>.*)$', message)
+      decoded_history.put_nowait((
+        message_match['sender'],
+        message_match['type'],
+        message_match['payload'],
+      ))
+
+    return decoded_history
 
   def __show_history(self):
     # Display an error if no history to show
-    if self.history is None:
+    if self.history is None or self.history.empty() is True:
       self.__show_error()
       return
 
@@ -48,7 +67,38 @@ class Reader:
     # Create a Text widget and display the plaintext history
     conversation = tkinter.Text(history_window)
     conversation.pack()
-    conversation.insert(tkinter.END, self.history)
+
+    # Load message history into the GUI window
+    self.__load_messages(conversation)
+
+  def __load_messages(self, conversation):
+    self.conversation_picture_history = Queue()
+
+    while self.history.empty() is False:
+      # Get new messages to load into the chat window
+      sender, message_type, message = self.history.get_nowait()
+
+      # Simply print text messages
+      if message_type == 'text':
+        conversation.insert(tkinter.END, '{}: {}\n'.format(sender, message))
+
+      # Convert images back to image format and display them
+      elif message_type == 'image':
+        conversation.insert(tkinter.END, '{}:\n'.format(sender))
+
+        # Convert image from string to bytes
+        image_data = bytes(message, encoding='latin1')
+
+        # Open the image from memory to avoid saving to disk
+        image = Image.open(io.BytesIO(image_data))
+        img = ImageTk.PhotoImage(image)
+
+        # Prevent image from being garbage-collected; persist in chat window
+        self.conversation_picture_history.put(img) 
+
+        # Create image on the GUI
+        conversation.image_create(tkinter.END, image=img)
+        conversation.insert(tkinter.END, '\n')
 
   # Display an error if unable to show history (no history, unauth, etc.)
   def __show_error(self):
