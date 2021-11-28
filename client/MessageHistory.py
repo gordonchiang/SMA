@@ -76,6 +76,47 @@ class MessageHistoryEncryption:
 
     return private_key
 
+  def create_encrypted_history_record(self, public_key, message):
+    key = AESGCM.generate_key(bit_length=128)
+    aesgcm = AESGCM(key)
+    nonce = os.urandom(12)
+
+    message_ciphertext = aesgcm.encrypt(nonce, message.encode('utf-8'), None)
+
+    message_key = key + nonce
+
+    key_ciphertext = public_key.encrypt(
+      message_key,
+      padding.OAEP(
+        mgf=padding.MGF1(algorithm=hashes.SHA256()),
+        algorithm=hashes.SHA256(),
+        label=None
+      )
+    )
+
+    return key_ciphertext + message_ciphertext
+
+  def decrypt_history_record(self, private_key, record):
+    key_ciphertext = record[:256]
+    record_ciphertext = record[256:]
+
+    message_key = private_key.decrypt(
+      key_ciphertext,
+      padding.OAEP(
+        mgf=padding.MGF1(algorithm=hashes.SHA256()),
+        algorithm=hashes.SHA256(),
+        label=None
+      )
+    )
+
+    key = message_key[:16]
+    aesgcm = AESGCM(key)
+    nonce = message_key[16:28]
+
+    record_plaintext = aesgcm.decrypt(nonce, record_ciphertext, None).decode('utf-8')
+
+    return record_plaintext
+
 class Reader:
   def __init__(self, root, username, recipient, password):
     self.username = username
@@ -119,26 +160,9 @@ class Reader:
     for record in [r for r in history.split('\n') if r]:
       decoded_record = base64.b64decode(record.encode('utf-8'))
 
-      key_ciphertext = decoded_record[:256]
+      record = MessageHistoryEncryption().decrypt_history_record(self.private_key, decoded_record)
 
-      message_key = self.private_key.decrypt(
-        key_ciphertext,
-        padding.OAEP(
-          mgf=padding.MGF1(algorithm=hashes.SHA256()),
-          algorithm=hashes.SHA256(),
-          label=None
-        )
-      )
-
-      key = message_key[:16]
-      aesgcm = AESGCM(key)
-      nonce = message_key[16:28]
-
-      message_ciphertext = decoded_record[256:]
-
-      message_plaintext = aesgcm.decrypt(nonce, message_ciphertext, None).decode('utf-8')
-
-      record_match = match('^(?P<sender>.*?)\n(?P<type>.*?)\n(?P<message>.*)$', message_plaintext, flags=DOTALL)
+      record_match = match('^(?P<sender>.*?)\n(?P<type>.*?)\n(?P<message>.*)$', record, flags=DOTALL)
 
       decoded_history.put_nowait((
         record_match['sender'],
@@ -243,24 +267,9 @@ class Writer:
   def save_to_history(self, sender, message_type, message):
     plaintext = '{}\n{}\n{}'.format(sender, message_type, message)
 
-    key = AESGCM.generate_key(bit_length=128)
-    aesgcm = AESGCM(key)
-    nonce = os.urandom(12)
+    history_bytes = MessageHistoryEncryption().create_encrypted_history_record(self.public_key, plaintext)
 
-    message_ciphertext = aesgcm.encrypt(nonce, plaintext.encode('utf-8'), None)
-
-    message_key = key + nonce
-
-    key_ciphertext = self.public_key.encrypt(
-      message_key,
-      padding.OAEP(
-        mgf=padding.MGF1(algorithm=hashes.SHA256()),
-        algorithm=hashes.SHA256(),
-        label=None
-      )
-    )
-
-    record = base64.b64encode(key_ciphertext + message_ciphertext).decode('utf-8')
+    record = base64.b64encode(history_bytes).decode('utf-8')
 
     history_fd = self.__open_history()
     history_fd.write(record + '\n')
