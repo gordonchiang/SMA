@@ -1,8 +1,9 @@
+import base64
 import io
 from pathlib import Path
 from PIL import Image, ImageTk
 from queue import Queue
-from re import match, split
+from re import match, DOTALL
 import os
 import tkinter
 import tkinter.messagebox
@@ -18,6 +19,7 @@ class Reader:
     if self.history is None:
       self.__show_error()
     else:
+      self.conversation_picture_history = Queue()
       self.__show_history()
 
   def __open_history(self):
@@ -40,15 +42,20 @@ class Reader:
   def __decode_history(self, history):
     decoded_history = Queue()
 
-    messages = split('\n', history)
-    for message in messages:
-      if not message: continue
-      message_match = match('^(?P<sender>.*?);(?P<type>.*?);(?P<payload>.*)$', message)
-      decoded_history.put_nowait((
-        message_match['sender'],
-        message_match['type'],
-        message_match['payload'],
-      ))
+    # Decode history entries
+    while history:
+      message_match = match('^(?P<sender>.*?)\n(?P<type>.*?)\n(?P<length>.*?)\n.*$', history, flags=DOTALL)
+      sender = message_match['sender']
+      message_type = message_match['type']
+      length = message_match['length']
+      message_length = int(length)
+      control_length = len(sender) + len(message_type) + len(length) + 3 # 3 '\n'
+
+      message = history[control_length:control_length+message_length]
+
+      decoded_history.put_nowait((sender, message_type, message))
+
+      history = history[control_length+message_length:]
 
     return decoded_history
 
@@ -72,10 +79,8 @@ class Reader:
     self.__load_messages(conversation)
 
   def __load_messages(self, conversation):
-    self.conversation_picture_history = Queue()
-
     while self.history.empty() is False:
-      # Get new messages to load into the chat window
+      # Get new messages to load into the history window
       sender, message_type, message = self.history.get_nowait()
 
       # Simply print text messages
@@ -87,7 +92,7 @@ class Reader:
         conversation.insert(tkinter.END, '{}:\n'.format(sender))
 
         # Convert image from string to bytes
-        image_data = bytes(message, encoding='latin1')
+        image_data = base64.b64decode(message.encode('utf-8'))
 
         # Open the image from memory to avoid saving to disk
         image = Image.open(io.BytesIO(image_data))
@@ -129,7 +134,6 @@ class Writer:
     return open(history_path, 'a')
 
   def save_to_history(self, sender, message_type, message):
-    record = '{};{};{}\n'.format(sender, message_type, message)
     history_fd = self.__open_history()
-    history_fd.write(record)
+    history_fd.write('{}\n{}\n{}\n{}'.format(sender, message_type, len(message), message))
     history_fd.close()

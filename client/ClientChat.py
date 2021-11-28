@@ -4,6 +4,7 @@ import Chat
 import MessageHistory
 
 chats = {}
+message_histories = {}
 
 """
   initialize_chat()
@@ -42,7 +43,7 @@ def initialize_message_history(username, root):
     recipient = recipient_text.get()
     key = key_text.get()
 
-    if recipient and key: MessageHistory.Reader(root, username, recipient, key)
+    if recipient and key: message_histories[recipient] = MessageHistory.Reader(root, username, recipient, key)
 
     select_history_window.destroy()
 
