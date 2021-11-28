@@ -1,3 +1,4 @@
+import base64
 import io
 import json
 from PIL import Image, ImageTk
@@ -63,7 +64,7 @@ class Chat:
             conversation.insert(tkinter.END, '{}:\n'.format(sender))
 
             # Convert image from string to bytes
-            image_data = bytes(message, encoding='latin1')
+            image_data = base64.b64decode(message.encode('utf-8'))
   
             # Open the image from memory to avoid saving to disk
             image = Image.open(io.BytesIO(image_data))
@@ -94,10 +95,8 @@ class Chat:
       image_path = tkinter.filedialog.askopenfilename(initialdir='~', title='Select image', filetypes=(('gif files','*.gif'),))
       if image_path:
         fd = open(image_path, 'rb')
-        payload = fd.read()
+        payload = base64.b64encode(fd.read()).decode('utf-8')
         fd.close()
-
-        payload = payload.decode(encoding='latin1') # Encode bytes to string for transmission
 
         headers = 'event: outgoing\nusername: {}\nto: {}\ntype: image\n\n'.format(self.username, self.recipient)
         self.client_socket.send(headers + payload)
