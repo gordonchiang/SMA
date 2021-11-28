@@ -70,7 +70,7 @@ class Chat:
             img = ImageTk.PhotoImage(image)
 
             # Prevent image from being garbage-collected; persist in chat window
-            self.conversation_picture_history.put(img) 
+            self.conversation_picture_history.put(img)
 
             # Create image on the GUI
             conversation.image_create(tkinter.END, image=img)
@@ -91,7 +91,7 @@ class Chat:
 
     # Callback to select an image to send to the recipient
     def get_image():
-      image_path = tkinter.filedialog.askopenfilename(initialdir='/', title='Select image', filetypes=(('gif files','*.gif'),))
+      image_path = tkinter.filedialog.askopenfilename(initialdir='~', title='Select image', filetypes=(('gif files','*.gif'),))
       if image_path:
         fd = open(image_path, 'rb')
         payload = fd.read()
