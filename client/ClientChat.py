@@ -41,9 +41,9 @@ def initialize_message_history(username, root):
   # Callback function to get the recipient's username and open the history window
   def view_history():
     recipient = recipient_text.get()
-    key = key_text.get()
+    password = password_text.get()
 
-    if recipient and key: message_histories[recipient] = MessageHistory.Reader(root, username, recipient, key)
+    if recipient and password: message_histories[recipient] = MessageHistory.Reader(root, username, recipient, password)
 
     select_history_window.destroy()
 
@@ -55,10 +55,10 @@ def initialize_message_history(username, root):
   recipient_entry.grid(row=0, column=1)
 
   # Authenticate user to view and decrypt history
-  key_label = tkinter.Label(select_history_window, text='Passphrase').grid(row=1, column=0)
-  key_text = tkinter.StringVar()
-  key_entry = tkinter.Entry(select_history_window, textvariable=key_text)
-  key_entry.grid(row=1, column=1)
+  password_label = tkinter.Label(select_history_window, text='Password').grid(row=1, column=0)
+  password_text = tkinter.StringVar()
+  password_entry = tkinter.Entry(select_history_window, show='*', textvariable=password_text)
+  password_entry.grid(row=1, column=1)
 
   submit_button = tkinter.Button(select_history_window, text='Open History', command=view_history).grid(row=3, column=1)
 

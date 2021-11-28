@@ -1,6 +1,5 @@
 import base64
 import io
-import json
 from PIL import Image, ImageTk
 from queue import Queue
 import tkinter
@@ -24,7 +23,7 @@ class Chat:
     self.conversation = ''
     self.conversation_picture_history = Queue()
 
-    self.history = MessageHistory.Writer(self.username, self.recipient, 'public_key_from_json') # TODO: public key from json config
+    self.history = MessageHistory.Writer(self.username, self.recipient)
 
   # Open a chat window: accept input to send as messages and update the window
   # with incoming messages

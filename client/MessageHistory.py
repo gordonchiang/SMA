@@ -1,5 +1,6 @@
 import base64
 import io
+import json
 from pathlib import Path
 from PIL import Image, ImageTk
 from queue import Queue
@@ -10,13 +11,81 @@ import tkinter.messagebox
 
 from cryptography.hazmat.primitives.asymmetric import rsa
 from cryptography.hazmat.primitives import serialization
+from cryptography.hazmat.primitives import hashes
+from cryptography.hazmat.primitives.asymmetric import padding
+
+class MessageHistoryEncryption:
+  def generate_private_key(self, password):
+    private_key = rsa.generate_private_key(public_exponent=65537, key_size=2048)
+
+    private_pem = private_key.private_bytes(
+      encoding=serialization.Encoding.PEM,
+      format=serialization.PrivateFormat.PKCS8,
+      encryption_algorithm=serialization.BestAvailableEncryption(password.encode('utf-8'))
+    )
+
+    public_key = private_key.public_key()
+
+    public_pem = public_key.public_bytes(
+      encoding=serialization.Encoding.PEM,
+      format=serialization.PublicFormat.SubjectPublicKeyInfo
+    )
+
+    return private_pem, public_pem
+
+  def load_public_key(self, username):
+    root_dir = os.path.dirname(os.path.realpath(__file__))
+    user_dir = Path(root_dir + '/{}'.format(username))
+    user_config_path = Path(root_dir + '/{}/config.json'.format(username))
+
+    # Validate username input; enforce child path of ./client/
+    if not user_config_path.is_relative_to(root_dir):
+      return None
+  
+    config_fd = open(user_config_path, 'r')
+    data = json.load(config_fd)
+    config_fd.close()
+    
+    public_pem = data['public_pem']
+
+    public_key = serialization.load_pem_public_key(public_pem.encode('utf-8'))
+
+    return public_key
+    
+
+  def load_private_key(self, username, password):
+    root_dir = os.path.dirname(os.path.realpath(__file__))
+    user_dir = Path(root_dir + '/{}'.format(username))
+    user_config_path = Path(root_dir + '/{}/config.json'.format(username))
+
+    # Validate username input; enforce child path of ./client/
+    if not user_config_path.is_relative_to(root_dir):
+      return None
+  
+    config_fd = open(user_config_path, 'r')
+    data = json.load(config_fd)
+    config_fd.close()
+    
+    private_pem = data['private_pem']
+
+    private_key = serialization.load_pem_private_key(
+        private_pem.encode('utf-8'),
+        password=password.encode('utf-8'),
+    )
+
+    return private_key
 
 class Reader:
-  def __init__(self, root, username, recipient, private_key):
+  def __init__(self, root, username, recipient, password):
     self.username = username
     self.root = root
     self.recipient = recipient
-    self.private_key = private_key
+
+    try:
+      self.private_key = MessageHistoryEncryption().load_private_key(username, password)
+    except:
+      self.__show_error()
+      return
 
     self.history = self.__open_history()
     if self.history is None:
@@ -46,19 +115,25 @@ class Reader:
     decoded_history = Queue()
 
     # Decode history entries
-    while history:
-      message_match = match('^(?P<sender>.*?)\n(?P<type>.*?)\n(?P<length>.*?)\n.*$', history, flags=DOTALL)
-      sender = message_match['sender']
-      message_type = message_match['type']
-      length = message_match['length']
-      message_length = int(length)
-      control_length = len(sender) + len(message_type) + len(length) + 3 # 3 '\n'
+    for record in [r for r in history.split('\n') if r]:
+      ciphertext = base64.b64decode(record.encode('utf-8'))
 
-      message = history[control_length:control_length+message_length]
+      plaintext = self.private_key.decrypt(
+        ciphertext,
+        padding.OAEP(
+          mgf=padding.MGF1(algorithm=hashes.SHA256()),
+          algorithm=hashes.SHA256(),
+          label=None
+        )
+      )
 
-      decoded_history.put_nowait((sender, message_type, message))
+      record_match = match('^(?P<sender>.*?)\n(?P<type>.*?)\n(?P<message>.*)$', plaintext.decode('utf-8'), flags=DOTALL)
 
-      history = history[control_length+message_length:]
+      decoded_history.put_nowait((
+        record_match['sender'],
+        record_match['type'],
+        record_match['message'],
+      ))
 
     return decoded_history
 
@@ -123,7 +198,7 @@ class Reader:
     if not history_path.is_relative_to(root_dir):
       return None
 
-    # Delete the file if it exists
+    # Delete the file if it exists      print(repr(record))
     if os.path.exists(history_path): os.remove(history_path)
 
     tkinter.messagebox.showinfo('Success', 'History with {} has been deleted!'.format(self.recipient))
@@ -131,10 +206,10 @@ class Reader:
     history_window.destroy()
 
 class Writer:
-  def __init__(self, username, recipient, public_key):
+  def __init__(self, username, recipient):
     self.username = username
     self.recipient = recipient
-    self.public_key = public_key
+    self.public_key = MessageHistoryEncryption().load_public_key(username)
 
   def __open_history(self):
     root_dir = os.path.dirname(os.path.realpath(__file__))
@@ -155,25 +230,18 @@ class Writer:
     return open(history_path, 'a')
 
   def save_to_history(self, sender, message_type, message):
+    plaintext = '{}\n{}\n{}'.format(sender, message_type, message)
+
+    ciphertext = self.public_key.encrypt(
+      plaintext.encode('utf-8'),
+      padding.OAEP(
+        mgf=padding.MGF1(algorithm=hashes.SHA256()),
+        algorithm=hashes.SHA256(),
+        label=None
+      )
+    )
+    record = base64.b64encode(ciphertext).decode('utf-8')
+
     history_fd = self.__open_history()
-    history_fd.write('{}\n{}\n{}\n{}'.format(sender, message_type, len(message), message))
+    history_fd.write(record + '\n')
     history_fd.close()
-
-class MessageHistoryEncryption:
-  def generate_private_key(self, password):
-    private_key = rsa.generate_private_key(public_exponent=65537, key_size=2048)
-
-    private_pem = private_key.private_bytes(
-      encoding=serialization.Encoding.PEM,
-      format=serialization.PrivateFormat.PKCS8,
-      encryption_algorithm=serialization.BestAvailableEncryption(password.encode('utf-8'))
-    )
-
-    public_key = private_key.public_key()
-
-    public_pem = public_key.public_bytes(
-      encoding=serialization.Encoding.PEM,
-      format=serialization.PublicFormat.SubjectPublicKeyInfo
-    )
-
-    return private_pem, public_pem

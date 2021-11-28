@@ -70,8 +70,8 @@ def login(client_socket):
         if(flag == 1):
             print("Login failed!\n")
         else:
-            print("Login succeeded!\n")
             create_user_config(username, password)
+            print("Login succeeded!\n")
             return True
 
 def getUI(UIName,savedData):
