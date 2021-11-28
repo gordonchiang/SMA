@@ -39,7 +39,7 @@ def initialize_message_history(username, root):
   select_history_window = tkinter.Toplevel(root)
 
   # Callback function to get the recipient's username and open the history window
-  def view_history():
+  def view_history(_ = None):
     recipient = recipient_text.get()
     password = password_text.get()
 
@@ -59,6 +59,7 @@ def initialize_message_history(username, root):
   password_text = tkinter.StringVar()
   password_entry = tkinter.Entry(select_history_window, show='*', textvariable=password_text)
   password_entry.grid(row=1, column=1)
+  password_entry.bind('<Return>', view_history)
 
   submit_button = tkinter.Button(select_history_window, text='Open History', command=view_history).grid(row=3, column=1)
 
