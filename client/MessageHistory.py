@@ -8,6 +8,9 @@ import os
 import tkinter
 import tkinter.messagebox
 
+from cryptography.hazmat.primitives.asymmetric import rsa
+from cryptography.hazmat.primitives import serialization
+
 class Reader:
   def __init__(self, root, username, recipient, private_key):
     self.username = username
@@ -155,3 +158,22 @@ class Writer:
     history_fd = self.__open_history()
     history_fd.write('{}\n{}\n{}\n{}'.format(sender, message_type, len(message), message))
     history_fd.close()
+
+class MessageHistoryEncryption:
+  def generate_private_key(self, password):
+    private_key = rsa.generate_private_key(public_exponent=65537, key_size=2048)
+
+    private_pem = private_key.private_bytes(
+      encoding=serialization.Encoding.PEM,
+      format=serialization.PrivateFormat.PKCS8,
+      encryption_algorithm=serialization.BestAvailableEncryption(password.encode('utf-8'))
+    )
+
+    public_key = private_key.public_key()
+
+    public_pem = public_key.public_bytes(
+      encoding=serialization.Encoding.PEM,
+      format=serialization.PublicFormat.SubjectPublicKeyInfo
+    )
+
+    return private_pem, public_pem

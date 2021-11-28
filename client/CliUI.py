@@ -1,8 +1,11 @@
+import json
+from pathlib import Path
 import os
 from getpass import getpass
 import ClientAuthentication
 import ClientServerConnection
 import ClientChat
+import MessageHistory
 
 def messaging(client_socket):
     ClientChat.show_chat_menu(client_socket)
@@ -50,6 +53,7 @@ def register(client_socket):
         else:
             print("Registration succeeded!\n")
             ClientAuthentication.login(client_socket,username,password)
+            create_user_config(username, password)
             return True
 
 def login(client_socket):
@@ -67,6 +71,7 @@ def login(client_socket):
             print("Login failed!\n")
         else:
             print("Login succeeded!\n")
+            create_user_config(username, password)
             return True
 
 def getUI(UIName,savedData):
@@ -90,3 +95,33 @@ def getUI(UIName,savedData):
         else:
             os.system("clear")
             return values[int(choice)-1]
+
+def create_user_config(username, password):
+    root_dir = os.path.dirname(os.path.realpath(__file__))
+    user_dir = Path(root_dir + '/{}'.format(username))
+    user_config_path = Path(root_dir + '/{}/config.json'.format(username))
+
+    # Validate username input; enforce child path of ./client/
+    if not user_config_path.is_relative_to(root_dir):
+        return None
+
+    # Create the yser directory for username if it doesn't exist
+    try:
+        os.makedirs(user_dir)
+    except FileExistsError:
+        pass
+
+    # Create a new config file if it doesn't exist
+    if os.path.exists(user_config_path):
+        return None
+
+    mhe = MessageHistory.MessageHistoryEncryption()
+    private_pem, public_pem = mhe.generate_private_key(password)
+
+    data = {}
+    data['private_pem'] = private_pem.decode('utf-8')
+    data['public_pem'] = public_pem.decode('utf-8')
+
+    config_fd = open(user_config_path, 'w')
+    json.dump(data, config_fd, indent=2)
+    config_fd.close()
