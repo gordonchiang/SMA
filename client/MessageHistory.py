@@ -13,9 +13,10 @@ from cryptography.hazmat.primitives.asymmetric import rsa
 from cryptography.hazmat.primitives import serialization
 from cryptography.hazmat.primitives import hashes
 from cryptography.hazmat.primitives.asymmetric import padding
+from cryptography.hazmat.primitives.ciphers.aead import AESGCM
 
 class MessageHistoryEncryption:
-  def generate_private_key(self, password):
+  def generate_pems(self, password):
     private_key = rsa.generate_private_key(public_exponent=65537, key_size=2048)
 
     private_pem = private_key.private_bytes(
@@ -116,10 +117,12 @@ class Reader:
 
     # Decode history entries
     for record in [r for r in history.split('\n') if r]:
-      ciphertext = base64.b64decode(record.encode('utf-8'))
+      decoded_record = base64.b64decode(record.encode('utf-8'))
 
-      plaintext = self.private_key.decrypt(
-        ciphertext,
+      key_ciphertext = decoded_record[:256]
+
+      message_key = self.private_key.decrypt(
+        key_ciphertext,
         padding.OAEP(
           mgf=padding.MGF1(algorithm=hashes.SHA256()),
           algorithm=hashes.SHA256(),
@@ -127,7 +130,15 @@ class Reader:
         )
       )
 
-      record_match = match('^(?P<sender>.*?)\n(?P<type>.*?)\n(?P<message>.*)$', plaintext.decode('utf-8'), flags=DOTALL)
+      key = message_key[:16]
+      aesgcm = AESGCM(key)
+      nonce = message_key[16:28]
+
+      message_ciphertext = decoded_record[256:]
+
+      message_plaintext = aesgcm.decrypt(nonce, message_ciphertext, None).decode('utf-8')
+
+      record_match = match('^(?P<sender>.*?)\n(?P<type>.*?)\n(?P<message>.*)$', message_plaintext, flags=DOTALL)
 
       decoded_history.put_nowait((
         record_match['sender'],
@@ -232,15 +243,24 @@ class Writer:
   def save_to_history(self, sender, message_type, message):
     plaintext = '{}\n{}\n{}'.format(sender, message_type, message)
 
-    ciphertext = self.public_key.encrypt(
-      plaintext.encode('utf-8'),
+    key = AESGCM.generate_key(bit_length=128)
+    aesgcm = AESGCM(key)
+    nonce = os.urandom(12)
+
+    message_ciphertext = aesgcm.encrypt(nonce, plaintext.encode('utf-8'), None)
+
+    message_key = key + nonce
+
+    key_ciphertext = self.public_key.encrypt(
+      message_key,
       padding.OAEP(
         mgf=padding.MGF1(algorithm=hashes.SHA256()),
         algorithm=hashes.SHA256(),
         label=None
       )
     )
-    record = base64.b64encode(ciphertext).decode('utf-8')
+
+    record = base64.b64encode(key_ciphertext + message_ciphertext).decode('utf-8')
 
     history_fd = self.__open_history()
     history_fd.write(record + '\n')

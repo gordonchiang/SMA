@@ -116,7 +116,7 @@ def create_user_config(username, password):
         return None
 
     mhe = MessageHistory.MessageHistoryEncryption()
-    private_pem, public_pem = mhe.generate_private_key(password)
+    private_pem, public_pem = mhe.generate_pems(password)
 
     data = {}
     data['private_pem'] = private_pem.decode('utf-8')
