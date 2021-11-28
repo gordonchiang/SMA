@@ -8,11 +8,6 @@ def messaging(client_socket):
     ClientChat.show_chat_menu(client_socket)
     return True
 
-def editHistory(client_socket):
-    input("Choose chat:")
-    #TODO: actrual edit history
-    return True
-
 def accountDelete(client_socket):
     choice = input("Are you sure you want to delete your account? Y/N: ")
     if(choice.lower() == 'y'):
