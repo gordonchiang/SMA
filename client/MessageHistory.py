@@ -78,6 +78,8 @@ class Reader:
     # Load message history into the GUI window
     self.__load_messages(conversation)
 
+    delete_button = tkinter.Button(history_window, text='Delete History', command=lambda: self.__delete_history(history_window)).pack()
+
   def __load_messages(self, conversation):
     while self.history.empty() is False:
       # Get new messages to load into the history window
@@ -108,6 +110,22 @@ class Reader:
   # Display an error if unable to show history (no history, unauth, etc.)
   def __show_error(self):
     tkinter.messagebox.showinfo('Error', 'History unavailable!')
+
+  # Delete the history
+  def __delete_history(self, history_window):
+    root_dir = os.path.dirname(os.path.realpath(__file__))
+    history_path = Path(root_dir + '/{}/{}.his'.format(self.username, self.recipient))
+
+    # Validate username and recipient input; enforce child path of ./client/
+    if not history_path.is_relative_to(root_dir):
+      return None
+
+    # Delete the file if it exists
+    if os.path.exists(history_path): os.remove(history_path)
+
+    tkinter.messagebox.showinfo('Success', 'History with {} has been deleted!'.format(self.recipient))
+
+    history_window.destroy()
 
 class Writer:
   def __init__(self, username, recipient, public_key):
