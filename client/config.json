@@ -11,9 +11,8 @@
 
   "MainMenu": {
     "1) Send message" : "messaging",
-    "2) Edit history" : "editHistory",
-    "3) Logout" : "logout",
-    "4) delete account" : "accountDelete"
+    "2) Logout" : "logout",
+    "3) delete account" : "accountDelete"
   }
 
 

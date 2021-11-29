@@ -1,16 +1,15 @@
-import os
 from getpass import getpass
+import json
+from pathlib import Path
+import os
+
 import ClientAuthentication
-import ClientServerConnection
 import ClientChat
+import ClientServerConnection
+import MessageHistoryEncryption
 
 def messaging(client_socket):
     ClientChat.show_chat_menu(client_socket)
-    return True
-
-def editHistory(client_socket):
-    input("Choose chat:")
-    #TODO: actrual edit history
     return True
 
 def accountDelete(client_socket):
@@ -55,6 +54,7 @@ def register(client_socket):
         else:
             print("Registration succeeded!\n")
             ClientAuthentication.login(client_socket,username,password)
+            create_user_config(username, password)
             return True
 
 def login(client_socket):
@@ -71,6 +71,7 @@ def login(client_socket):
         if(flag == 1):
             print("Login failed!\n")
         else:
+            create_user_config(username, password)
             print("Login succeeded!\n")
             return True
 
@@ -95,3 +96,40 @@ def getUI(UIName,savedData):
         else:
             os.system("clear")
             return values[int(choice)-1]
+
+"""
+    create_user_config()
+
+    Creates the user's config.json where keys are stored.
+"""
+def create_user_config(username, password):
+    # Build the path to the user's config file
+    root_dir = os.path.dirname(os.path.realpath(__file__))
+    user_dir = Path(root_dir + '/{}'.format(username))
+    user_config_path = Path(root_dir + '/{}/config.json'.format(username))
+
+    # Validate username input; enforce child path of ./client/
+    if not user_config_path.is_relative_to(root_dir):
+        return None
+
+    # Create the yser directory for username if it doesn't exist
+    try:
+        os.makedirs(user_dir)
+    except FileExistsError:
+        pass
+
+    # Create a new config file if it doesn't exist
+    if os.path.exists(user_config_path):
+        return None
+
+    # Generate the private and pubic RSA keys' PEMs to write to the config file
+    private_pem, public_pem = MessageHistoryEncryption.MessageHistoryEncryption().generate_pems(password)
+
+    data = {}
+    data['private_pem'] = private_pem.decode('utf-8')
+    data['public_pem'] = public_pem.decode('utf-8')
+
+    # Write the config file
+    config_fd = open(user_config_path, 'w')
+    json.dump(data, config_fd, indent=2)
+    config_fd.close()
