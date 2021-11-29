@@ -6,7 +6,7 @@ import tkinter
 import tkinter.messagebox
 
 import ClientAuthentication
-import ClientChat
+import MainMenu
 import MessageHistoryEncryption
 
 class LoginMenu:
@@ -85,7 +85,7 @@ class LoginMenu:
         login_success = ClientAuthentication.login(self.client_socket, username, password)
         if login_success is True:
           self.__create_user_config(self.client_socket.get_username(), password)
-          ClientChat.show_main_menu(self.login_menu, self.client_socket)
+          MainMenu.MainMenu(self.login_menu, self.client_socket)
           self.login_menu.withdraw()
           login_window.destroy()
         else:
