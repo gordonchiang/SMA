@@ -3,6 +3,7 @@ import tkinter
 
 import Chat
 import ClientAuthentication
+import ConfigHelper
 import MessageHistory
 
 chats = {}
@@ -139,6 +140,7 @@ class MainMenu:
             delete_success = ClientAuthentication.delete_account(self.client_socket, password)
             if delete_success is True:
               tkinter.messagebox.showinfo('Success', 'Your account {} has been deleted!'.format(self.username))
+              ConfigHelper.delete_user_config(self.username)
               ClientAuthentication.logout(self.client_socket)
               delete_account_window.destroy()
             else:
@@ -166,5 +168,7 @@ class MainMenu:
     # Checkbox to confirm deletion
     confirm_deletion = tkinter.BooleanVar()
     confirm_deletion_button = tkinter.Checkbutton(delete_account_window, text='Confirm account deletion', variable=confirm_deletion, onvalue=True, offvalue=False).grid(row=3, column=0)
+
+    tkinter.messagebox.showinfo('Attention', 'This will delete all of your data!')
 
     submit_button = tkinter.Button(delete_account_window, text='Delete Account', command=delete_account).grid(row=3, column=1)

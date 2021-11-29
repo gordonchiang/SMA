@@ -1,13 +1,10 @@
-import json
-import os
-from pathlib import Path
 import sys
 import tkinter
 import tkinter.messagebox
 
 import ClientAuthentication
+import ConfigHelper
 import MainMenu
-import MessageHistoryEncryption
 
 class LoginMenu:
   def __init__(self, client_socket):
@@ -84,7 +81,7 @@ class LoginMenu:
       if username and password:
         login_success = ClientAuthentication.login(self.client_socket, username, password)
         if login_success is True:
-          self.__create_user_config(self.client_socket.get_username(), password)
+          ConfigHelper.create_user_config(self.client_socket.get_username(), password)
           MainMenu.MainMenu(self.login_menu, self.client_socket)
           self.login_menu.withdraw()
           login_window.destroy()
@@ -107,36 +104,3 @@ class LoginMenu:
     password_entry.bind('<Return>', login)
 
     submit_button = tkinter.Button(login_window, text='Login', command=login).grid(row=3, column=1)
-
-  # Creates the user's config.json where keys are stored
-  def __create_user_config(self, username, password):
-    # Build the path to the user's config file
-    root_dir = os.path.dirname(os.path.realpath(__file__))
-    user_dir = Path(root_dir + '/{}'.format(username))
-    user_config_path = Path(root_dir + '/{}/config.json'.format(username))
-
-    # Validate username input; enforce child path of ./client/
-    if not user_config_path.is_relative_to(root_dir):
-        return None
-
-    # Create the yser directory for username if it doesn't exist
-    try:
-        os.makedirs(user_dir)
-    except FileExistsError:
-        pass
-
-    # Create a new config file if it doesn't exist
-    if os.path.exists(user_config_path):
-        return None
-
-    # Generate the private and pubic RSA keys' PEMs to write to the config file
-    private_pem, public_pem = MessageHistoryEncryption.MessageHistoryEncryption().generate_pems(password)
-
-    data = {}
-    data['private_pem'] = private_pem.decode('utf-8')
-    data['public_pem'] = public_pem.decode('utf-8')
-
-    # Write the config file
-    config_fd = open(user_config_path, 'w')
-    json.dump(data, config_fd, indent=2)
-    config_fd.close()
