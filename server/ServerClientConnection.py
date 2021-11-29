@@ -66,7 +66,7 @@ class Connection:
         delete_user(self.client_socket, self.users_database, headers['username'], headers['password'])
 
     # Connection closed by client
-    except ConnectionResetError as e:
+    except ConnectionResetError:
       return self.disconnect()
 
     except Exception as e:

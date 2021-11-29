@@ -84,7 +84,7 @@ class Chat:
 
           if not message_type == 'server': self.save_history(sender, message_type, message)
             
-        except Exception as e:
+        except:
           continue
 
       chat_window.after(500, display_conversation) # Update the window

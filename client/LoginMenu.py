@@ -37,7 +37,10 @@ class LoginMenu:
       repeat_password = repeat_password_text.get()
 
       if username and password and repeat_password:
-        if not password == repeat_password:
+        if ClientAuthentication.validate_username_input(username) is False or ClientAuthentication.validate_password_input(password) is False:
+          tkinter.messagebox.showinfo('Error', 'Invalid input!')
+          register_window.destroy()
+        elif not password == repeat_password:
           tkinter.messagebox.showinfo('Error', 'Passwords do not match!')
           register_window.destroy()
         else:

@@ -30,7 +30,7 @@ class ClientServerConnection:
         sys.stderr.write('The connection to the server has been closed! Please try again later.\n')
         self.disconnect()
       return data.decode()
-    except ConnectionResetError as e:
+    except ConnectionResetError:
       sys.stderr.write('The connection to the server has been closed! Please try again later.\n')
       return self.disconnect()
 
@@ -67,6 +67,6 @@ class ClientServerConnection:
       return headers, payload
 
     # Failed to parse incoming data, exit
-    except Exception as e:
+    except:
       sys.stderr.write('Unable to parse incoming data\n')
       sys.exit(1)
