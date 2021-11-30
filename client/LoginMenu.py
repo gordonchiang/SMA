@@ -6,7 +6,16 @@ import ClientAuthentication
 import ConfigHelper
 import MainMenu
 
+"""
+  LoginMenu
+
+  Prompt an un-logged in user to:
+  - login
+  - register a new account
+  - exit
+"""
 class LoginMenu:
+  # Draw the GUI window
   def __init__(self, client_socket):
     self.client_socket = client_socket
     self.login_menu = tkinter.Tk()
@@ -16,6 +25,7 @@ class LoginMenu:
     self.login_menu.title('Main Menu')
     tkinter.Label(self.login_menu, text='Main Menu').pack(fill=tkinter.X)
 
+    # Add functional buttons
     login_button = tkinter.Button(self.login_menu, text='Login', command=self.__login).pack()
     register_button = tkinter.Button(self.login_menu, text='Register', command=self.__register).pack()
     exit_button = tkinter.Button(self.login_menu, text='Exit', command=lambda: sys.exit(0)).pack()
@@ -27,6 +37,12 @@ class LoginMenu:
 
     self.login_menu.mainloop()
 
+  """
+    register()
+
+    Get account credentials from the user and attempt to use the credentials to
+    register a new account on the server.
+  """
   def __register(self):
     register_window = tkinter.Toplevel(self.login_menu)
 
@@ -36,6 +52,7 @@ class LoginMenu:
       password = password_text.get()
       repeat_password = repeat_password_text.get()
 
+      # Validate input
       if username and password and repeat_password:
         if ClientAuthentication.validate_username_input(username) is False or ClientAuthentication.validate_password_input(password) is False:
           tkinter.messagebox.showinfo('Error', 'Invalid input!')
@@ -44,11 +61,12 @@ class LoginMenu:
           tkinter.messagebox.showinfo('Error', 'Passwords do not match!')
           register_window.destroy()
         else:
+          # Input validated; attempt to register
           register_success = ClientAuthentication.register(self.client_socket, username, password)
-          if register_success is True:
+          if register_success is True: # Successful registration
             tkinter.messagebox.showinfo('Success', 'Your account {} has been registered!'.format(username))
             register_window.destroy()
-          else:
+          else: # Failed registration
             tkinter.messagebox.showinfo('Error', 'Registration failed!')
             register_window.destroy()
 
@@ -73,6 +91,12 @@ class LoginMenu:
 
     submit_button = tkinter.Button(register_window, text='Register', command=register).grid(row=3, column=1)
 
+  """
+    login()
+
+    Get account credentials from the user and attempt to use the credentials to
+    login to an existing account on the server.
+  """
   def __login(self):
     login_window = tkinter.Toplevel(self.login_menu)
 
@@ -81,14 +105,15 @@ class LoginMenu:
       username = username_text.get()
       password = password_text.get()
 
+      # Validate input
       if username and password:
         login_success = ClientAuthentication.login(self.client_socket, username, password)
-        if login_success is True:
+        if login_success is True: # Successful login
           ConfigHelper.create_user_config(self.client_socket.get_username(), password)
           MainMenu.MainMenu(self.login_menu, self.client_socket)
           self.login_menu.withdraw()
           login_window.destroy()
-        else:
+        else: # Failed login
           tkinter.messagebox.showinfo('Error', 'Login failed!')
           login_window.destroy()
 

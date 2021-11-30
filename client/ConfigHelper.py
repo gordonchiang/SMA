@@ -5,7 +5,11 @@ import shutil
 
 import MessageHistoryEncryption
 
-# Creates the user's config.json where keys are stored
+"""
+  create_user_config()
+
+  Create the user's config.json file and user directory if they don't exist.
+"""
 def create_user_config(username, password):
   # Build the path to the user's config file
   root_dir = os.path.dirname(os.path.realpath(__file__))
@@ -16,7 +20,7 @@ def create_user_config(username, password):
   if not user_config_path.is_relative_to(root_dir):
     return None
 
-  # Create the yser directory for username if it doesn't exist
+  # Create the user directory for username if it doesn't exist
   try:
     os.makedirs(user_dir)
   except FileExistsError:
@@ -38,6 +42,11 @@ def create_user_config(username, password):
   json.dump(data, config_fd, indent=2)
   config_fd.close()
 
+"""
+  delete_user_config()
+
+  Attempt to delete the user's saved data (config and history).
+"""
 def delete_user_config(username):
   # Build the path to the user's config file
   root_dir = os.path.dirname(os.path.realpath(__file__))

@@ -1,5 +1,3 @@
-import re
-
 """
   register()
 
@@ -37,9 +35,20 @@ def login(client_socket, user, pw):
   else:
     return False
 
+"""
+  logout()
+
+  Logs the user out and exits.
+"""
 def logout(client_socket):
   client_socket.disconnect()
 
+"""
+  delete_account()
+
+  Accept user-inputted username and password and attempt to delete the currently
+  logged in aaccount with these credentials.
+"""
 def delete_account(client_socket, pw):
   if not pw: return 1
 
@@ -52,6 +61,12 @@ def delete_account(client_socket, pw):
   else:
     return False
 
+"""
+  validate_username_input()
+
+  Validates username input for:
+  - forbidden characters
+"""
 def validate_username_input(username):
   # Avoid characters that could be used to change dir
   if '.' in username:
@@ -68,6 +83,14 @@ def validate_username_input(username):
 
   return True
 
+"""
+  validate_password_input()
+
+  Validates password input for:
+  - forbidden characters
+  - length requirements
+  - TO-DO: forbidden passwords (in list of common passwords)
+"""
 def validate_password_input(password):
   if '\n' in password: # Avoid problems with packet delimiting
     return False

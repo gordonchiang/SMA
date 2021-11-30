@@ -37,7 +37,11 @@ class Reader:
       self.conversation_picture_history = Queue() # To avoid garbage collection
       self.__show_history()
 
-  # Open the history file
+  """
+    open_history()
+
+    Opens the .his (history) file for reading.
+  """
   def __open_history(self):
     # Build the path to the .his file
     root_dir = os.path.dirname(os.path.realpath(__file__))
@@ -57,7 +61,11 @@ class Reader:
       fd.close()
       return self.__decode_history(history) # Decrypt and decode the messages in the history
 
-  # Decode the history back to UTF-8 and decrypt it
+  """
+    decode_history()
+
+    Decodes the .his (history) file content to strings and decrypts it.
+  """
   def __decode_history(self, history):
     decoded_history = Queue()
 
@@ -80,7 +88,11 @@ class Reader:
 
     return decoded_history
 
-  # Display the history in the GUI
+  """
+    show_history()
+
+    Displays the history in the GUI.
+  """
   def __show_history(self):
     # Display an error if no history to show
     if self.history is None or self.history.empty() is True:
@@ -103,7 +115,11 @@ class Reader:
     # Create a button to delete the history
     delete_button = tkinter.Button(history_window, text='Delete History', command=lambda: self.__delete_history(history_window)).pack()
 
-  # Load the messages into the GUI window
+  """
+    load_messags()
+
+    Loads the decoded messages in the history into the GUI window.
+  """
   def __load_messages(self, conversation):
     while self.history.empty() is False:
       # Get new messages to load into the history window
@@ -131,11 +147,21 @@ class Reader:
         conversation.image_create(tkinter.END, image=img)
         conversation.insert(tkinter.END, '\n')
 
-  # Display an error if unable to show history (no history, unauth, etc.)
+  """
+    show_error()
+
+    Displays an error if something goes wrong during history viewing:
+      - failed authentication
+      - no history available
+  """
   def __show_error(self):
     tkinter.messagebox.showinfo('Error', 'History unavailable!')
 
-  # Delete the history
+  """
+    delete_history()
+
+    Deletes the currently opened .his (history) file.
+  """
   def __delete_history(self, history_window):
     # Build the path to the history file
     root_dir = os.path.dirname(os.path.realpath(__file__))
@@ -166,7 +192,11 @@ class Writer:
     # Load the public key from the user's config file
     self.public_key = MessageHistoryEncryption.MessageHistoryEncryption().load_public_key(username)
 
-  # Open the history file
+  """
+    open_history()
+
+    Opens the .his (history) file for appending.
+  """
   def __open_history(self):
     # Build the path to the history file
     root_dir = os.path.dirname(os.path.realpath(__file__))
@@ -186,7 +216,11 @@ class Writer:
     # Create a new history file or open an existing one
     return open(history_path, 'a')
 
-  # Save new encoded and encrypted records into the history file
+  """
+    save_to_history()
+
+    Saves new encoded and encrypted records into the .his (history) file.
+  """
   def save_to_history(self, sender, message_type, message):
     # Build the metadata + message for the record
     plaintext = '{}\n{}\n{}'.format(sender, message_type, message)

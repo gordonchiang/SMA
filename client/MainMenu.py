@@ -10,11 +10,16 @@ chats = {}
 message_histories = {}
 
 """
-  show_main_menu()
+  MainMenu
 
-  Prompt the logged in user for messaging actions.
+  Prompt the logged in user for messaging actions:
+    - chat
+    - view message history
+    - delete account
+    - exit
 """
 class MainMenu:
+  # Draw the GUI window
   def __init__(self, login_menu, client_socket):
     self.login_menu = login_menu
     self.client_socket = client_socket
@@ -38,10 +43,10 @@ class MainMenu:
     exit_button = tkinter.Button(self.main_menu, text='Exit', command=client_socket.disconnect).pack(side=tkinter.BOTTOM)
 
   """
-  listen()
+    listen()
 
-  Listen for incoming data from the server. Parse incoming data and dispatch the
-  incoming user messages accordingly.
+    Listen for incoming data from the server. Parse incoming data and dispatch the
+    incoming user messages accordingly.
   """
   def __listen(self):
     while True:
@@ -74,6 +79,7 @@ class MainMenu:
     def get_input(_):
       recipient = input_text.get()
       if recipient not in chats:
+        # Start the chat with the recipient
         chats[recipient] = Chat.Chat(self.client_socket, self.main_menu, recipient)
       chats[recipient].chat()
       recipient_window.destroy()
@@ -119,6 +125,11 @@ class MainMenu:
 
     submit_button = tkinter.Button(select_history_window, text='Open History', command=view_history).grid(row=3, column=1)
 
+  """
+    delete_account()
+
+    Re-authenticate the user and delete the account from the server.
+  """
   def __delete_account(self):
     delete_account_window = tkinter.Toplevel(self.main_menu)
 
@@ -128,6 +139,7 @@ class MainMenu:
       password = password_text.get()
       repeat_password = repeat_password_text.get()
 
+      # Validate input
       if username and password and repeat_password:
         if confirm_deletion.get() is False:
           tkinter.messagebox.showinfo('Error', 'Account deletion not confirmed!')
@@ -137,13 +149,14 @@ class MainMenu:
             tkinter.messagebox.showinfo('Error', 'Incorrect credentials!')
             delete_account_window.destroy()
           else:
+            # Request server to delete the account
             delete_success = ClientAuthentication.delete_account(self.client_socket, password)
-            if delete_success is True:
+            if delete_success is True: # Successful deletion
               tkinter.messagebox.showinfo('Success', 'Your account {} has been deleted!'.format(self.username))
-              ConfigHelper.delete_user_config(self.username)
+              ConfigHelper.delete_user_config(self.username) # Try to delete user config and history
               ClientAuthentication.logout(self.client_socket)
               delete_account_window.destroy()
-            else:
+            else: # Failed deletion
               tkinter.messagebox.showinfo('Error', 'Account deletion failed!')
               delete_account_window.destroy()
 
@@ -160,6 +173,7 @@ class MainMenu:
     password_entry = tkinter.Entry(delete_account_window, show='*', textvariable=password_text)
     password_entry.grid(row=1, column=1)
 
+    # Request the password again
     repeat_password_label = tkinter.Label(delete_account_window, text='Repeat Password').grid(row=2, column=0)
     repeat_password_text = tkinter.StringVar()
     repeat_password_entry = tkinter.Entry(delete_account_window, show='*', textvariable=repeat_password_text)
