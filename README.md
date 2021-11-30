@@ -15,4 +15,4 @@ This is the Gitlab repository for the Secure Messaging project for **group 16**
 |Users can sign up for an account and also delete their account|User can request change to the user database|
 |SM must be implemented in Python| All the functional code is implemented in Python|
 
-<img src="DFD_visual.png"/>
+<img src="Documents/DFD_visual.png"/>
