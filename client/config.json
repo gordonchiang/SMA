@@ -1,19 +1,6 @@
 {
-  "ServerInfo":{
-    "ServerIP" : "localhost",
-    "ServerPort" : 9000
-  },
-
-  "LogIn Menu":{
-    "1) register a new account" : "register",
-    "2) Login to an existing account" : "login"
-  },
-
-  "MainMenu": {
-    "1) Send message" : "messaging",
-    "2) Logout" : "logout",
-    "3) delete account" : "accountDelete"
+  "server":{
+    "ip" : "localhost",
+    "port" : 9000
   }
-
-
 }

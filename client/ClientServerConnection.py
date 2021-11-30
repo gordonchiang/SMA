@@ -11,16 +11,36 @@ class ClientServerConnection:
   def __init__(self, sock):
     self.socket = sock
 
+  """
+    set_username()
+
+    Set the username after login.
+  """
   def set_username(self, username):
     self.username = username
 
+  """
+    get_username()
+
+    Returns the logged in user's username.
+  """
   def get_username(self):
     return self.username
 
+  """
+    send()
+
+    Encodes the messages into bytes and sends it to the server thru the socket.
+  """
   # Send messages to the server
   def send(self, message):
     return self.socket.send(message.encode())
 
+  """
+    receive()
+
+    Receives bytes from the server.
+  """
   # Receive messages from the server
   # If no bytes of data received, then connection has been closed, so disconnect
   def receive(self, buffer_size = 1024*30):
@@ -30,11 +50,15 @@ class ClientServerConnection:
         sys.stderr.write('The connection to the server has been closed! Please try again later.\n')
         self.disconnect()
       return data.decode()
-    except ConnectionResetError as e:
+    except ConnectionResetError:
       sys.stderr.write('The connection to the server has been closed! Please try again later.\n')
       return self.disconnect()
 
-  # Close the socket and exit the client
+  """
+    disconect()
+
+    Close the socket and exit the client.
+  """
   def disconnect(self):
     try:
       self.socket.shutdown(SHUT_RDWR)
@@ -67,6 +91,6 @@ class ClientServerConnection:
       return headers, payload
 
     # Failed to parse incoming data, exit
-    except Exception as e:
+    except:
       sys.stderr.write('Unable to parse incoming data\n')
       sys.exit(1)

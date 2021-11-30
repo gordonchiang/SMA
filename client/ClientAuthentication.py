@@ -12,9 +12,9 @@ def register(client_socket, user, pw):
   response = client_socket.receive()
   headers, _ = client_socket.parse_incoming(response)
   if headers['event'] == 'register' and headers['status'] == 'success':
-    return 0
+    return True
   else:
-    return 1
+    return False
 
 """
   login()
@@ -31,36 +31,74 @@ def login(client_socket, user, pw):
   headers, _ = client_socket.parse_incoming(response)
   if headers['event'] == 'login' and headers['status'] == 'success':
     client_socket.set_username(user)
-    return 0
+    return True
   else:
-    return 1
+    return False
 
+"""
+  logout()
+
+  Logs the user out and exits.
+"""
 def logout(client_socket):
-    client_socket.disconnect()
+  client_socket.disconnect()
 
-def deleteAccount(client_socket, pw):
-    if not pw: return 1
+"""
+  delete_account()
 
-    message = 'event: delete\nusername: {}\npassword: {}\n\n'.format(client_socket.get_username(), pw)
-    client_socket.send(message)
-    response = client_socket.receive()
-    headers, _ = client_socket.parse_incoming(response)
-    if headers['event'] == 'delete' and headers['status'] == 'success':
-      client_socket.disconnect()
-      return 0
-    else:
-      return 1
+  Accept user-inputted username and password and attempt to delete the currently
+  logged in aaccount with these credentials.
+"""
+def delete_account(client_socket, pw):
+  if not pw: return 1
 
-def passwordCheck(password):
-    import re
-    if(' ' in password):
-        return (False,"Password must not include space")
-    if(len(password) < 8):
-        return (False,"Password must be longer than 8 characters")
-    if(not re.search("[a-z]",password)):
-        return (False,"Password contain both uppercase and lowercase letters")
-    if(not re.search("[A-Z]",password)):
-        return (False,"Password contain both uppercase and lowercase letters")
-    if(not re.search("[0-9]",password)):
-        return (False,"Password contain both letters and numbers")
-    return (True,"Valid password")
+  message = 'event: delete\nusername: {}\npassword: {}\n\n'.format(client_socket.get_username(), pw)
+  client_socket.send(message)
+  response = client_socket.receive()
+  headers, _ = client_socket.parse_incoming(response)
+  if headers['event'] == 'delete' and headers['status'] == 'success':
+    return True
+  else:
+    return False
+
+"""
+  validate_username_input()
+
+  Validates username input for:
+  - forbidden characters
+"""
+def validate_username_input(username):
+  # Avoid characters that could be used to change dir
+  if '.' in username:
+    return False
+
+  if '/' in username:
+    return False
+
+  if '~' in username:
+    return False
+
+  if '\n' in username: # Avoid problems with packet delimiting
+    return False
+
+  return True
+
+"""
+  validate_password_input()
+
+  Validates password input for:
+  - forbidden characters
+  - length requirements
+  - TO-DO: forbidden passwords (in list of common passwords)
+"""
+def validate_password_input(password):
+  if '\n' in password: # Avoid problems with packet delimiting
+    return False
+
+  if len(password) < 8:
+    return False
+
+  # if password in list_of_common_passwords:
+  #   return False
+
+  return True

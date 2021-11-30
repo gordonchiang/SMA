@@ -1,15 +1,12 @@
 #!/usr/bin/env python3
 
+import json
 from socket import socket, AF_INET, SOCK_STREAM
 import ssl
 import sys
-import ClientAuthentication
-import ClientChat
-import ClientServerConnection
-import CliUI
 
-import json
-import os
+import ClientServerConnection
+import LoginMenu
 
 """
   connect()
@@ -27,30 +24,21 @@ def connect(server_address):
 
     return ClientServerConnection.ClientServerConnection(sock)
 
-  # Failed to connect to server, exit
+  # Failed to connect to server
   except:
     sys.stderr.write('Unable to connect to the server\n')
-    sys.exit(1)
+    return None
 
 def main():
-    with open("./client/config.json") as jfile:
-        savedData = json.load(jfile)
+  # Open config file
+  with open("./client/config.json") as config_file:
+    config = json.load(config_file)
 
-    programFlag = True
-    while programFlag:
-        client_socket = connect((savedData["ServerInfo"]["ServerIP"],savedData["ServerInfo"]["ServerPort"]))
-        loginFlag = False
-        while not loginFlag: #While not logged in
-            func = CliUI.getUI("LogIn Menu",savedData)
-            loginFlag = eval("CliUI." + func + "(client_socket)")
+  # Connect to the server
+  client_socket = connect((config['server']['ip'], config['server']['port']))
 
-        input('Press any key to continue...')
-
-        mainFlag = True
-        while mainFlag:
-            func = CliUI.getUI("MainMenu",savedData)
-            mainFlag = eval("CliUI." + func + "(client_socket)")
-            print(programFlag)
+  # Launch login menu
+  LoginMenu.LoginMenu(client_socket)
 
 if __name__ == "__main__":
   try:

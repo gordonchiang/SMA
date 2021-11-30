@@ -15,9 +15,14 @@ import os
   Encrypts and decrypts texts using the RSA keys and AESGCM for message history.
 """
 class MessageHistoryEncryption:
-  # Generate the private and public RSA keys
-  # Generate the PEMs for the RSA keys to be saved into the user's config
-  def generate_pems(self, password):
+  """
+    generate_pems()
+
+    Generate the private and public RSA keys. Generate the PEMs for the RSA keys
+    to be saved into the user's config.
+  """
+  @staticmethod
+  def generate_pems(password):
     # Generate the private RSA key
     private_key = rsa.generate_private_key(public_exponent=65537, key_size=2048)
 
@@ -39,8 +44,13 @@ class MessageHistoryEncryption:
 
     return private_pem, public_pem
 
-  # Loads the public key from the user's config file
-  def load_public_key(self, username):
+  """
+    load_public_key()
+
+    Loads the public key from the user's config file.
+  """
+  @staticmethod
+  def load_public_key(username):
     # Build the path to the config file
     root_dir = os.path.dirname(os.path.realpath(__file__))
     user_dir = Path(root_dir + '/{}'.format(username))
@@ -61,8 +71,13 @@ class MessageHistoryEncryption:
 
     return public_key
   
-  # Loads the private key from the user's config file, password required
-  def load_private_key(self, username, password):
+  """
+    load_private_key()
+
+    Loads the private key from the user's config file; password required.
+  """
+  @staticmethod
+  def load_private_key(username, password):
     # Build the path to the config file
     root_dir = os.path.dirname(os.path.realpath(__file__))
     user_dir = Path(root_dir + '/{}'.format(username))
@@ -86,9 +101,14 @@ class MessageHistoryEncryption:
 
     return private_key
 
-  # Create a key and nonce and use it to encrypt a history message
-  # Return the RSA-encrypted(key + nonce) + AESGCM-encrypted(message)
-  def create_encrypted_history_record(self, public_key, message):
+  """
+    create_encrypted_history_record()
+
+    Create a key and nonce and use it to encrypt a history message. Return the
+    RSA-encrypted(key + nonce) + AESGCM-encrypted(message).
+  """
+  @staticmethod
+  def create_encrypted_history_record(public_key, message):
     # Generate the key, nonce, and algorithm
     key = AESGCM.generate_key(bit_length=128)
     aesgcm = AESGCM(key)
@@ -111,8 +131,13 @@ class MessageHistoryEncryption:
 
     return key_ciphertext + message_ciphertext
 
-  # Decrypt a history message using the private RSA key
-  def decrypt_history_record(self, private_key, record):
+  """
+    decrypt_history_record()
+
+    Decrypt a history message using the private RSA key
+  """
+  @staticmethod
+  def decrypt_history_record(private_key, record):
     key_ciphertext = record[:256] # Get the AESGCM key + nonce
     record_ciphertext = record[256:] # Get the AESGCM-encrypted(message)
 

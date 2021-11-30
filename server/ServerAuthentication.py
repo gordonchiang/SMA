@@ -52,9 +52,8 @@ def register_new_user(client_socket, db, username, password):
     conn.commit()
 
   # If any error arises, fail registration and notify client
-  except Exception as e:
+  except:
     conn.close()
-    print(e)
     client_socket.send('event: register\nstatus: failure\n\n'.encode())
 
   # Notify client of successful registration
@@ -87,9 +86,8 @@ def client_login(connection, db, username, password):
     verify_password(password, password_hash, salt)
 
   # If any error arises, fail authentication and notify the client
-  except Exception as e:
+  except:
     conn.close()
-    print(e)
     client_socket.send('event: login\nstatus: failure\n\n'.encode())
     return None
 
@@ -143,9 +141,8 @@ def delete_user(client_socket, db, username, password):
     row = cursor.fetchone()
 
   # If any error arises, fail deletion and notify client
-  except Exception as e:
+  except:
     conn.close()
-    print(e)
     client_socket.send('event: delete\nstatus: failure\n\n'.encode())
 
   else:

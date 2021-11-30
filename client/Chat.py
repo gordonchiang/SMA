@@ -25,8 +25,12 @@ class Chat:
 
     self.history = MessageHistory.Writer(self.username, self.recipient)
 
-  # Open a chat window: accept input to send as messages and update the window
-  # with incoming messages
+  """
+    chat()
+
+    Open a chat window. Accept input to send as messages and update the window
+    with incoming messages. Save messags to message history.
+  """
   def chat(self):
     chat_window = tkinter.Toplevel(self.root)
 
@@ -46,7 +50,7 @@ class Chat:
       # Display the message in the chat window
       self.load_message(self.username, 'text', payload)
 
-    # Callback to update the chat window with messages every second
+    # Callback to update the chat window with messages periodically
     def display_conversation():
       while not self.message_queue.empty():
         try:
@@ -84,10 +88,10 @@ class Chat:
 
           if not message_type == 'server': self.save_history(sender, message_type, message)
             
-        except Exception as e:
+        except:
           continue
 
-      chat_window.after(500, display_conversation) # Update the window
+      chat_window.after(500, display_conversation) # Update the GUI window
 
     # Callback to select an image to send to the recipient
     def get_image():
@@ -121,10 +125,10 @@ class Chat:
     image_entry = tkinter.Button(chat_window, text='Send Image', command=get_image)
     image_entry.pack()
 
-  # Save history of chat between self.username and self.recipient
-  def save_history(self, sender, message_type, message):
-    pass # TODO
+  """
+    load_message()
 
-  # Queue messages so they get loaded into the chat window in order
+    Queue messages so they get loaded into the chat window in order.
+  """
   def load_message(self, sender, message_type, message):
     self.message_queue.put_nowait((sender, message_type, message))
