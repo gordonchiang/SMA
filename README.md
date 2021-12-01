@@ -4,8 +4,7 @@ This is the Gitlab repository for the Secure Messaging project for **group 16**
 
 First, setup the server to generate the certificate and public key by running
 `python3 server/server.py`
-(this pathing is to ensure the client end can locate the certificant and publick key)
-When the server application prompt for a passphrase, enter "passphrase" (without quotations) and hit enter, the server would finish setup and start listing to events.
+(this pathing is to ensure the client end can locate the certificant and publick key). When the server application prompt for a passphrase, enter "passphrase" (without quotations) and hit enter, the server would finish setup and start listing to events.
 
 Once the server is up and running, create a client instance by running
 `python3 client/client.py`
