@@ -50,7 +50,7 @@ class Chat:
       self.message_type_buffer = 'text'
 
       # Send public key from A to B
-      send_public_key(self.recipient, 'peer_keyA')
+      self.send_public_key(self.recipient, 'peer_keyA')
 
       # Display the message in the chat window
       self.load_message(self.username, 'text', payload)
@@ -66,7 +66,7 @@ class Chat:
         self.message_type_buffer = 'image'
 
         # Send public key from A to B
-        send_public_key(self.recipient, 'peer_keyA')
+        self.send_public_key(self.recipient, 'peer_keyA')
 
         # Display the image in the chat window
         self.load_message(self.username, 'image', payload)
@@ -148,18 +148,18 @@ class Chat:
 
   # Send public key to recipient of message or back to sender of message
   # key_type here is either peer_keyA (sender public key) or peer_keyB (recipient public key)
-  def send_public_key(recipient, key_type):
+  def send_public_key(self, recipient, key_type):
     keys = DH_Keys() # Generate keys
     self.key_buffer['priv'] = keys.get_priv_key() # Store private key to buffer to encrypt message later
 
-    payload = keys.get_public_key() # Set payload to public key to send to B
+    payload = gen_serialized_key(keys.get_public_key()).decode() # Set payload to public key to send to B
     headers = 'event: outgoing\nusername: {}\nto: {}\ntype: {}\n\n'.format(self.username, recipient, key_type)
     self.client_socket.send(headers + payload)
 
   # Send encrypted message to recipient of message
   # payload is cipher of message
-  def send_encrypted_msg(recipient, peer_keyB, msg_type):
-    shared_key = gen_shared_key(self.key_buffer['priv'], peer_keyB)
+  def send_encrypted_msg(self, recipient, peer_keyB, msg_type):
+    shared_key = gen_shared_key(self.key_buffer['priv'], gen_deserialized_key(peer_keyB))
     payload = encrypt_message(self.message_buffer, shared_key)
     headers = 'event: outgoing\nusername: {}\nto: {}\ntype: {}\n\n'.format(self.username, recipient, msg_type)
     self.client_socket.send(headers + payload)
