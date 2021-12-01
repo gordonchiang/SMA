@@ -4,8 +4,13 @@ from PIL import Image, ImageTk
 from queue import Queue
 import tkinter
 import tkinter.filedialog
+from GCMEncryption import *
 
 import MessageHistory
+
+key_buffer = {}
+message_buffer = ""
+message_type_buffer = ""
 
 """
   Chat
@@ -38,17 +43,52 @@ class Chat:
     chat_window.title('{} - chatting with {}'.format(self.username, self.recipient))
     tkinter.Label(chat_window, text='Chatting with: {}'.format(self.recipient)).pack(fill=tkinter.X)
 
+    # Send public key to recipient of message or back to sender of message
+    # key_type here is either peer_keyA (sender public key) or peer_keyB (recipient public key)
+    def send_public_key(recipient, key_type):
+      keys = DH_Keys() # Generate keys
+      key_buffer[priv] = keys.get_priv_key() # Store private key to buffer to encrypt message later
+
+      payload = keys.get_public_key() # Set payload to public key to send to B
+      headers = 'event: outgoing\nusername: {}\nto: {}\ntype: {}\n\n'.format(self.username, recipient, key_type)
+      self.client_socket.send(headers + payload)
+
+    # Send encrypted message to recipient of message
+    # payload is cipher of message
+    def send_encrypted_msg(recipient, shared_key, msg_type):
+      payload = encrypt_message(message_buffer, shared_key)
+      headers = 'event: outgoing\nusername: {}\nto: {}\ntype: {}\n\n'.format(self.username, recipient, msg_type)
+      message_buffer = ""
+      self.client_socket.send(headers + payload)
+
     # Callback to get input from user to send to recipient
     def get_input(_):
       payload = input_text.get()
       message_entry.delete(0, tkinter.END) # Clear input field
+      message_buffer = payload # Save message in buffer to encrypt later
+      message_type_buffer = 'text_enc'
 
-      # Build and send message to recipient
-      headers = 'event: outgoing\nusername: {}\nto: {}\ntype: text\n\n'.format(self.username, self.recipient)
-      self.client_socket.send(headers + payload)
+      # Send public key from A to B
+      send_public_key(self.recipient, 'peer_keyA')
 
       # Display the message in the chat window
       self.load_message(self.username, 'text', payload)
+
+    # Callback to select an image to send to the recipient
+    def get_image():
+      image_path = tkinter.filedialog.askopenfilename(initialdir='~', title='Select image', filetypes=(('gif files','*.gif'),))
+      if image_path:
+        fd = open(image_path, 'rb')
+        payload = base64.b64encode(fd.read()).decode('utf-8')
+        fd.close()
+        message_buffer = payload # Save image in buffer to encrypt later
+        message_type_buffer = 'image_enc'
+
+        # Send public key from A to B
+        send_public_key(self.recipient, 'peer_keyA')
+
+        # Display the image in the chat window
+        self.load_message(self.username, 'image', payload)
 
     # Callback to update the chat window with messages periodically
     def display_conversation():
@@ -93,18 +133,6 @@ class Chat:
 
       chat_window.after(500, display_conversation) # Update the GUI window
 
-    # Callback to select an image to send to the recipient
-    def get_image():
-      image_path = tkinter.filedialog.askopenfilename(initialdir='~', title='Select image', filetypes=(('gif files','*.gif'),))
-      if image_path:
-        fd = open(image_path, 'rb')
-        payload = base64.b64encode(fd.read()).decode('utf-8')
-        fd.close()
-
-        headers = 'event: outgoing\nusername: {}\nto: {}\ntype: image\n\n'.format(self.username, self.recipient)
-        self.client_socket.send(headers + payload)
-        self.load_message(self.username, 'image', payload)
-
     # Create a Text widget to display the messages
     conversation = tkinter.Text(chat_window)
     conversation.insert(tkinter.END, self.conversation)
@@ -125,10 +153,31 @@ class Chat:
     image_entry = tkinter.Button(chat_window, text='Send Image', command=get_image)
     image_entry.pack()
 
-  """
-    load_message()
-
-    Queue messages so they get loaded into the chat window in order.
-  """
+  # Queue messages so they get loaded into the chat window in order
+  # If message is coming from sender, it needs to be decrypted
+  # If message is being printed on the console by the sender, it does not need to be decrypted
   def load_message(self, sender, message_type, message):
-    self.message_queue.put_nowait((sender, message_type, message))
+    # If message is encrypted and is a text message
+    if(message_type == 'text_enc'):
+      shared_key = gen_shared_key(key_buffer['priv'], key_buffer['public'])
+      decrypted_message = decrypt_message(message, shared_key)
+      self.message_queue.put_nowait((sender, 'text', decrypted_message))
+
+    # If message is encrypted and is an image
+    elif(message_type == 'image_enc'):
+      shared_key = gen_shared_key(key_buffer['priv'], key_buffer['public'])
+      decrypted_message = decrypt_message(message, shared_key)
+      self.message_queue.put_nowait((sender, 'image', decrypted_message))
+
+    # If message is not encrypted (just printing text/image on own console)
+    else:
+      self.message_queue.put_nowait((sender, message_type, message))
+
+  def save_key_buffer(key_type, key):
+    key_buffer[key_type] = key
+
+  def get_key_buffer(key_type):
+    return key_buffer[key_type]
+
+  def get_message_type():
+    return message_type_buffer

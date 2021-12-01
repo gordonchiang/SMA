@@ -58,8 +58,38 @@ class MainMenu:
       # Message from recipient
       if event == 'incoming':
         recipient = headers['from']
-        if recipient not in chats: chats[recipient] = Chat(self.client_socket, self.main_menu, recipient)
-        chats[recipient].load_message(recipient, headers['type'], payload)
+
+        # POV: B
+        # Payload here is peer_keyA
+        # Want to send peer_keyB back to sender
+        # Saves shared key to use later
+        if headers['type'] == 'peer_keyA':
+          chats[recipient] = Chat(client_socket, root, recipient)
+
+          peer_keyA = payload
+          chats[recipient].save_key_buffer('public', peer_keyA) # Save peer_keyA to B key_buffer
+          chats[recipient].send_public_key(recipient, 'peer_keyB') # Send peer_keyB to A
+
+        # POV: A
+        # Payload here is peer_keyB
+        # Want to generate shared key, encrypt message, and send to recipient
+        elif headers['type'] == 'peer_keyB':
+          chats[recipient] = Chat(client_socket, root, recipient)
+
+          priv_keyA = chats[recipient].get_key_buffer('priv')
+          peer_keyB = payload
+          shared_key = chats[recipient].gen_shared_key(priv_keyA, peer_keyB) # Generate shared key
+
+          message_type = chats[recipient].get_message_type() # Gets message type (text or image) from chat instance
+          chats[recipient].send_encrypted_msg(recipient, shared_key, message_type) # A Sends encrypted message to B
+
+        # POV: B
+        # Payload here is the cipher for either the text or image
+        # Type here is going to be 'text_enc' or 'image_enc'
+        else: 
+          if recipient not in chats: 
+            chats[recipient] = Chat(client_socket, root, recipient)
+            chats[recipient].load_message(recipient, headers['type'], payload) # B Loads message from A
 
       # Message from server reflecting the outgoing messaging back to client indicating an error
       elif event == 'outgoing' and headers['status'] == 'failure' and headers['type'] == 'server':

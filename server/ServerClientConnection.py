@@ -81,7 +81,7 @@ class Connection:
   """
   def relay_message(self, recipient, message_type, payload):
     # Check if message type is valid
-    if message_type not in ['text', 'image']:
+    if message_type not in ['text_enc', 'image_enc', 'peer_keyA', 'peer_keyB']:
       sys.stderr.write('Invalid message type received\n')
       raise ValueError
 

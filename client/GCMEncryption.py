@@ -1,7 +1,3 @@
-# References
-# https://cryptography.io/en/latest/hazmat/primitives/asymmetric/dh/
-# https://cryptography.io/en/latest/hazmat/primitives/aead/
-
 import os
 from cryptography.hazmat.primitives.ciphers.aead import AESGCM
 from cryptography.hazmat.primitives import hashes
@@ -26,13 +22,19 @@ class DH_Keys:
 		self.priv_key = parameters.generate_private_key()
 		self.public_key = self.priv_key.public_key()
 
-	#
-	# Generate shared key
-	#
-	def gen_shared_key(self, peer_key):
-		shared_key = self.priv_key.exchange(peer_key)
-		derived_key = HKDF(algorithm=hashes.SHA256(),length=32,salt=None,info=b'handshake data',).derive(shared_key)
-		return derived_key
+	def get_priv_key(self):
+		return self.priv_key;
+
+	def get_public_key(self):
+		return self.public_key;
+
+#
+# Generate shared key from own private key and peer public key
+#
+def gen_shared_key(priv_key, peer_key):
+	shared_key = priv_key.exchange(peer_key)
+	derived_key = HKDF(algorithm=hashes.SHA256(),length=32,salt=None,info=b'handshake data',).derive(shared_key)
+	return derived_key
 
 #
 # Symmetric cryptography using Diffie-Hellman key (key must be 128, 192, or 256 bits)
@@ -59,25 +61,3 @@ def decrypt_message(cipher, key):
 		return plaintext.decode()
 	except Exception as e:
 		return "MESSAGE NOT AUTHENTICATED"
-
-#
-# Used for debug purposes
-#
-def main():
-	# A would be the sender, B would be the recipient
-	A = DH_Keys()
-	B = DH_Keys()
-
-	# Generate shared keys
-	A_shared_key = A.gen_shared_key(B.public_key)
-	B_shared_key = B.gen_shared_key(A.public_key)
-
-	input_msg = input("Input: ")
-	print("Shared DH key is:",A_shared_key)
-	cipher = encrypt_message(input_msg, A_shared_key)
-	
-	decrypted_message = decrypt_message(cipher, A_shared_key)
-	print(decrypted_message)
-
-if __name__ == "__main__":
-	main()
