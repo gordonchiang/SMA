@@ -64,7 +64,7 @@ class MainMenu:
         # Want to send peer_keyB back to sender
         # Saves shared key to use later
         if headers['type'] == 'peer_keyA':
-          chats[recipient] = Chat(client_socket, root, recipient)
+          chats[recipient] = Chat(self.client_socket, self.main_menu, recipient)
 
           peer_keyA = payload
           chats[recipient].save_key_buffer('public', peer_keyA) # Save peer_keyA to B key_buffer
@@ -74,7 +74,7 @@ class MainMenu:
         # Payload here is peer_keyB
         # Want to generate shared key, encrypt message, and send to recipient
         elif headers['type'] == 'peer_keyB':
-          chats[recipient] = Chat(client_socket, root, recipient)
+          chats[recipient] = Chat(self.client_socket, self.main_menu, recipient)
 
           priv_keyA = chats[recipient].get_key_buffer('priv')
           peer_keyB = payload
@@ -88,7 +88,7 @@ class MainMenu:
         # Type here is going to be 'text_enc' or 'image_enc'
         else: 
           if recipient not in chats: 
-            chats[recipient] = Chat(client_socket, root, recipient)
+            chats[recipient] = Chat(self.client_socket, self.main_menu, recipient)
             chats[recipient].load_message(recipient, headers['type'], payload) # B Loads message from A
 
       # Message from server reflecting the outgoing messaging back to client indicating an error
