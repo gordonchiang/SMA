@@ -47,7 +47,7 @@ class Chat:
       payload = input_text.get()
       message_entry.delete(0, tkinter.END) # Clear input field
       self.message_buffer = payload # Save message in buffer to encrypt later
-      self.message_type_buffer = 'text_enc'
+      self.message_type_buffer = 'text'
 
       # Send public key from A to B
       send_public_key(self.recipient, 'peer_keyA')
@@ -63,7 +63,7 @@ class Chat:
         payload = base64.b64encode(fd.read()).decode('utf-8')
         fd.close()
         self.message_buffer = payload # Save image in buffer to encrypt later
-        self.message_type_buffer = 'image_enc'
+        self.message_type_buffer = 'image'
 
         # Send public key from A to B
         send_public_key(self.recipient, 'peer_keyA')
@@ -150,7 +150,7 @@ class Chat:
   # key_type here is either peer_keyA (sender public key) or peer_keyB (recipient public key)
   def send_public_key(recipient, key_type):
     keys = DH_Keys() # Generate keys
-    self.key_buffer[priv] = keys.get_priv_key() # Store private key to buffer to encrypt message later
+    self.key_buffer['priv'] = keys.get_priv_key() # Store private key to buffer to encrypt message later
 
     payload = keys.get_public_key() # Set payload to public key to send to B
     headers = 'event: outgoing\nusername: {}\nto: {}\ntype: {}\n\n'.format(self.username, recipient, key_type)
@@ -158,10 +158,10 @@ class Chat:
 
   # Send encrypted message to recipient of message
   # payload is cipher of message
-  def send_encrypted_msg(recipient, shared_key, msg_type):
+  def send_encrypted_msg(recipient, peer_keyB, msg_type):
+    shared_key = gen_shared_key(self.key_buffer['priv'], peer_keyB)
     payload = encrypt_message(self.message_buffer, shared_key)
     headers = 'event: outgoing\nusername: {}\nto: {}\ntype: {}\n\n'.format(self.username, recipient, msg_type)
-    self.message_buffer = ""
     self.client_socket.send(headers + payload)
 
   def save_key_buffer(key_type, key):
