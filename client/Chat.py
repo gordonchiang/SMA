@@ -42,33 +42,6 @@ class Chat:
     chat_window.title('{} - chatting with {}'.format(self.username, self.recipient))
     tkinter.Label(chat_window, text='Chatting with: {}'.format(self.recipient)).pack(fill=tkinter.X)
 
-    def save_key_buffer(key_type, key):
-      self.key_buffer[key_type] = key
-
-    def get_key_buffer(key_type):
-      return self.key_buffer[key_type]
-
-    def get_message_type():
-      return self.message_type_buffer
-
-    # Send public key to recipient of message or back to sender of message
-    # key_type here is either peer_keyA (sender public key) or peer_keyB (recipient public key)
-    def send_public_key(recipient, key_type):
-      keys = DH_Keys() # Generate keys
-      self.key_buffer[priv] = keys.get_priv_key() # Store private key to buffer to encrypt message later
-
-      payload = keys.get_public_key() # Set payload to public key to send to B
-      headers = 'event: outgoing\nusername: {}\nto: {}\ntype: {}\n\n'.format(self.username, recipient, key_type)
-      self.client_socket.send(headers + payload)
-
-    # Send encrypted message to recipient of message
-    # payload is cipher of message
-    def send_encrypted_msg(recipient, shared_key, msg_type):
-      payload = encrypt_message(self.message_buffer, shared_key)
-      headers = 'event: outgoing\nusername: {}\nto: {}\ntype: {}\n\n'.format(self.username, recipient, msg_type)
-      self.message_buffer = ""
-      self.client_socket.send(headers + payload)
-
     # Callback to get input from user to send to recipient
     def get_input(_):
       payload = input_text.get()
@@ -164,19 +137,38 @@ class Chat:
   # Queue messages so they get loaded into the chat window in order
   # If message is coming from sender, it needs to be decrypted
   # If message is being printed on the console by the sender, it does not need to be decrypted
-  def load_message(self, sender, message_type, message):
-    # If message is encrypted and is a text message
-    if(message_type == 'text_enc'):
-      shared_key = gen_shared_key(self.key_buffer['priv'], self.key_buffer['public'])
-      decrypted_message = decrypt_message(message, shared_key)
-      self.message_queue.put_nowait((sender, 'text', decrypted_message))
-
-    # If message is encrypted and is an image
-    elif(message_type == 'image_enc'):
-      shared_key = gen_shared_key(self.key_buffer['priv'], self.key_buffer['public'])
-      decrypted_message = decrypt_message(message, shared_key)
-      self.message_queue.put_nowait((sender, 'image', decrypted_message))
-
-    # If message is not encrypted (just printing text/image on own console)
-    else:
+  def load_message(self, sender, message_type, message, encryption = False):
+    if (encryption == False):
       self.message_queue.put_nowait((sender, message_type, message))
+
+    else:
+      shared_key = gen_shared_key(self.key_buffer['priv'], self.key_buffer['public'])
+      decrypted_message = decrypt_message(message, shared_key)
+      self.message_queue.put_nowait((sender, message_type, decrypted_message))
+
+  # Send public key to recipient of message or back to sender of message
+  # key_type here is either peer_keyA (sender public key) or peer_keyB (recipient public key)
+  def send_public_key(recipient, key_type):
+    keys = DH_Keys() # Generate keys
+    self.key_buffer[priv] = keys.get_priv_key() # Store private key to buffer to encrypt message later
+
+    payload = keys.get_public_key() # Set payload to public key to send to B
+    headers = 'event: outgoing\nusername: {}\nto: {}\ntype: {}\n\n'.format(self.username, recipient, key_type)
+    self.client_socket.send(headers + payload)
+
+  # Send encrypted message to recipient of message
+  # payload is cipher of message
+  def send_encrypted_msg(recipient, shared_key, msg_type):
+    payload = encrypt_message(self.message_buffer, shared_key)
+    headers = 'event: outgoing\nusername: {}\nto: {}\ntype: {}\n\n'.format(self.username, recipient, msg_type)
+    self.message_buffer = ""
+    self.client_socket.send(headers + payload)
+
+  def save_key_buffer(key_type, key):
+      self.key_buffer[key_type] = key
+
+  def get_key_buffer(key_type):
+    return self.key_buffer[key_type]
+
+  def get_message_type():
+    return self.message_type_buffer

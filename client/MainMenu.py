@@ -89,7 +89,7 @@ class MainMenu:
         else: 
           if recipient not in chats: 
             chats[recipient] = Chat(self.client_socket, self.main_menu, recipient)
-            chats[recipient].load_message(recipient, headers['type'], payload) # B Loads message from A
+            chats[recipient].load_message(recipient, headers['type'], payload, encryption = True) # B Loads message from A
 
       # Message from server reflecting the outgoing messaging back to client indicating an error
       elif event == 'outgoing' and headers['status'] == 'failure' and headers['type'] == 'server':
