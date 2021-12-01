@@ -5,7 +5,6 @@ import Chat
 import ClientAuthentication
 import ConfigHelper
 import MessageHistory
-from GCMEncryption import gen_shared_key
 
 chats = {}
 message_histories = {}
