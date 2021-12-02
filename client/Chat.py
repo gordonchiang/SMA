@@ -21,7 +21,6 @@ class Chat:
     self.username = client_socket.get_username()
     self.recipient = recipient
     self.message_queue = Queue() # (username, type, message)
-    self.conversation = ''
     self.conversation_picture_history = Queue()
     self.history = MessageHistory.Writer(self.username, self.recipient)
 
@@ -117,8 +116,6 @@ class Chat:
 
     # Create a Text widget to display the messages
     conversation = tkinter.Text(chat_window)
-    conversation.insert(tkinter.END, self.conversation)
-    conversation.update()
     conversation.pack()
 
     # Periodically update the messages
