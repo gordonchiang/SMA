@@ -5,6 +5,7 @@ import Chat
 import ClientAuthentication
 import ConfigHelper
 import MessageHistory
+from Chat import Chat
 
 chats = {}
 message_histories = {}
@@ -58,8 +59,25 @@ class MainMenu:
       # Message from recipient
       if event == 'incoming':
         recipient = headers['from']
-        if recipient not in chats: chats[recipient] = Chat(self.client_socket, self.main_menu, recipient)
-        chats[recipient].load_message(recipient, headers['type'], payload)
+        message_type = headers['type']
+
+        if recipient not in chats: 
+          chats[recipient] = Chat(self.client_socket, self.main_menu, recipient)
+
+        # Received a public key to initiate Diffie-Hellman
+        # Use to generate a shared key to eventually decrypt a message
+        # Send own public key back
+        if message_type == 'dh_init':
+          chats[recipient].handle_dh_init(payload)
+
+        # Received a public key to complete Diffie-Hellman from recipient
+        # Use to generate a shared key to send encrypted message
+        elif message_type == 'dh_fin':
+          chats[recipient].handle_dh_fin(payload)
+
+        # Received an encrypted message from recipient
+        elif message_type in ['text', 'image']: 
+          chats[recipient].load_message(recipient, message_type, payload, encryption = True)
 
       # Message from server reflecting the outgoing messaging back to client indicating an error
       elif event == 'outgoing' and headers['status'] == 'failure' and headers['type'] == 'server':
@@ -80,7 +98,7 @@ class MainMenu:
       recipient = input_text.get()
       if recipient not in chats:
         # Start the chat with the recipient
-        chats[recipient] = Chat.Chat(self.client_socket, self.main_menu, recipient)
+        chats[recipient] = Chat(self.client_socket, self.main_menu, recipient)
       chats[recipient].chat()
       recipient_window.destroy()
 

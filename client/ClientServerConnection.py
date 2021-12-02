@@ -43,7 +43,7 @@ class ClientServerConnection:
   """
   # Receive messages from the server
   # If no bytes of data received, then connection has been closed, so disconnect
-  def receive(self, buffer_size = 1024*30):
+  def receive(self, buffer_size = 1024*100):
     try:
       data = self.socket.recv(buffer_size)
       if not data:
