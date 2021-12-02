@@ -39,7 +39,7 @@ class Connection:
   def process_data(self):
     try:
       # Retrieve data from socket
-      data = self.client_socket.recv(1024*30).decode()
+      data = self.client_socket.recv(1024*100).decode()
 
       # Connection closed by client
       if not data: return self.disconnect()
@@ -81,7 +81,7 @@ class Connection:
   """
   def relay_message(self, recipient, message_type, payload):
     # Check if message type is valid
-    if message_type not in ['text', 'image', 'peer_keyA', 'peer_keyB']:
+    if message_type not in ['text', 'image', 'dh_init', 'dh_fin']:
       sys.stderr.write('Invalid message type received\n')
       raise ValueError
 

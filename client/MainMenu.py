@@ -59,32 +59,25 @@ class MainMenu:
       # Message from recipient
       if event == 'incoming':
         recipient = headers['from']
+        message_type = headers['type']
 
         if recipient not in chats: 
           chats[recipient] = Chat(self.client_socket, self.main_menu, recipient)
 
-        # POV: B
-        # Payload here is peer_keyA
-        # Want to send peer_keyB back to sender
-        # Saves shared key to use later
-        if headers['type'] == 'peer_keyA':
-          peer_keyA = payload
-          chats[recipient].save_key_buffer('public', peer_keyA) # Save peer_keyA to B key_buffer
-          chats[recipient].send_public_key(recipient, 'peer_keyB') # Send peer_keyB to A
+        # Received a public key to initiate Diffie-Hellman
+        # Use to generate a shared key to eventually decrypt a message
+        # Send own public key back
+        if message_type == 'dh_init':
+          chats[recipient].handle_dh_init(payload)
 
-        # POV: A
-        # Payload here is peer_keyB
-        # Want to generate shared key, encrypt message, and send to recipient
-        elif headers['type'] == 'peer_keyB':
-          peer_keyB = payload
-          message_type = chats[recipient].get_message_type() # Gets message type (text or image) from chat instance
-          chats[recipient].send_encrypted_msg(recipient, peer_keyB, message_type) # A Sends encrypted message to B
+        # Received a public key to complete Diffie-Hellman from recipient
+        # Use to generate a shared key to send encrypted message
+        elif message_type == 'dh_fin':
+          chats[recipient].handle_dh_fin(payload)
 
-        # POV: B
-        # Payload here is the cipher for either the text or image
-        # Type here is going to be 'text' or 'image'
-        else: 
-            chats[recipient].load_message(recipient, headers['type'], payload, encryption = True) # B Loads message from A
+        # Received an encrypted message from recipient
+        elif message_type in ['text', 'image']: 
+          chats[recipient].load_message(recipient, message_type, payload, encryption = True)
 
       # Message from server reflecting the outgoing messaging back to client indicating an error
       elif event == 'outgoing' and headers['status'] == 'failure' and headers['type'] == 'server':
