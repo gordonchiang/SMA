@@ -43,7 +43,8 @@ def gen_serialized_key(public_key):
 	return serialized_key
 
 def gen_deserialized_key(serialized_public_key):
-	deserialized_key = load_pem_public_key(serialized_public_key)
+	serialized_key_encoded = serialized_public_key.encode()
+	deserialized_key = load_pem_public_key(serialized_key_encoded)
 	return deserialized_key
 
 #

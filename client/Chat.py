@@ -56,6 +56,7 @@ class Chat:
       self.load_message(self.username, 'text', payload)
 
     # Callback to select an image to send to the recipient
+    # Only GIFs are supported
     def get_image():
       image_path = tkinter.filedialog.askopenfilename(initialdir='~', title='Select image', filetypes=(('gif files','*.gif'),))
       if image_path:
@@ -142,15 +143,16 @@ class Chat:
       self.message_queue.put_nowait((sender, message_type, message))
 
     else:
-      shared_key = gen_shared_key(self.key_buffer['priv'], self.key_buffer['public'])
-      decrypted_message = decrypt_message(message, shared_key)
+      shared_key = gen_shared_key(self.key_buffer['priv'], gen_deserialized_key(self.key_buffer['public']))
+      encoded_cipher = base64.b64decode(message.encode('utf-8'))
+      decrypted_message = decrypt_message(encoded_cipher, shared_key)
       self.message_queue.put_nowait((sender, message_type, decrypted_message))
 
   # Send public key to recipient of message or back to sender of message
   # key_type here is either peer_keyA (sender public key) or peer_keyB (recipient public key)
   def send_public_key(self, recipient, key_type):
     keys = DH_Keys() # Generate keys
-    self.key_buffer['priv'] = keys.get_priv_key() # Store private key to buffer to encrypt message later
+    self.key_buffer['priv'] = keys.get_priv_key() # Store private key to buffer to encrypt/decrypt message later
 
     payload = gen_serialized_key(keys.get_public_key()).decode() # Set payload to public key to send to B
     headers = 'event: outgoing\nusername: {}\nto: {}\ntype: {}\n\n'.format(self.username, recipient, key_type)
@@ -160,15 +162,21 @@ class Chat:
   # payload is cipher of message
   def send_encrypted_msg(self, recipient, peer_keyB, msg_type):
     shared_key = gen_shared_key(self.key_buffer['priv'], gen_deserialized_key(peer_keyB))
-    payload = encrypt_message(self.message_buffer, shared_key)
+
+    cipher = encrypt_message(self.message_buffer, shared_key)
+    payload = base64.b64encode(cipher).decode('utf-8')
+
     headers = 'event: outgoing\nusername: {}\nto: {}\ntype: {}\n\n'.format(self.username, recipient, msg_type)
     self.client_socket.send(headers + payload)
 
-  def save_key_buffer(key_type, key):
+  # Function to save key to key_buffer
+  def save_key_buffer(self,key_type, key):
       self.key_buffer[key_type] = key
 
-  def get_key_buffer(key_type):
+  # Function to get key from key_buffer
+  def get_key_buffer(self,key_type):
     return self.key_buffer[key_type]
 
-  def get_message_type():
+  # Function to get message_type from message_type_buffer
+  def get_message_type(self):
     return self.message_type_buffer

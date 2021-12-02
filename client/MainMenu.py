@@ -5,6 +5,7 @@ import Chat
 import ClientAuthentication
 import ConfigHelper
 import MessageHistory
+from Chat import Chat
 
 chats = {}
 message_histories = {}
@@ -81,7 +82,7 @@ class MainMenu:
 
         # POV: B
         # Payload here is the cipher for either the text or image
-        # Type here is going to be 'text_enc' or 'image_enc'
+        # Type here is going to be 'text' or 'image'
         else: 
             chats[recipient].load_message(recipient, headers['type'], payload, encryption = True) # B Loads message from A
 
@@ -104,7 +105,7 @@ class MainMenu:
       recipient = input_text.get()
       if recipient not in chats:
         # Start the chat with the recipient
-        chats[recipient] = Chat.Chat(self.client_socket, self.main_menu, recipient)
+        chats[recipient] = Chat(self.client_socket, self.main_menu, recipient)
       chats[recipient].chat()
       recipient_window.destroy()
 
