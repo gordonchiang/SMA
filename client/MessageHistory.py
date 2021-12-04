@@ -116,7 +116,7 @@ class Reader:
     delete_button = tkinter.Button(history_window, text='Delete History', command=lambda: self.__delete_history(history_window)).pack()
 
   """
-    load_messags()
+    load_messages()
 
     Loads the decoded messages in the history into the GUI window.
   """
