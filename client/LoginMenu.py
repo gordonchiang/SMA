@@ -22,8 +22,8 @@ class LoginMenu:
 
     # Style chat menu window
     self.login_menu.geometry('300x100')
-    self.login_menu.title('Main Menu')
-    tkinter.Label(self.login_menu, text='Main Menu').pack(fill=tkinter.X)
+    self.login_menu.title('Login Menu')
+    tkinter.Label(self.login_menu, text='Login Menu').pack(fill=tkinter.X)
 
     # Add functional buttons
     login_button = tkinter.Button(self.login_menu, text='Login', command=self.__login).pack()
