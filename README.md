@@ -26,9 +26,15 @@ After cloning the repo, run `pip install -r requirements.txt` from the root dire
     1. Login: login to an existing account with the server using a username and password.
     2. Register: register a new account with the server using a username and password.
     3. Exit: close the client.
+
+![Screenshot of the login menu](doc/login_menu_example.png)
+
 3. Once the user is authenticated into a user account, they may choose various options:
     1. Chat: select a user with whom to chat synchronously.
     2. Message History: view the saved message history with a user (password-protected).
     3. Delete Account: delete the currently logged in account from the server (password-protected).
     4. Exit: close the client.
+
+![Screenshot of the main menu](doc/main_menu_example.png)
+
 4. You may create multiple client instances for testing purposes.
