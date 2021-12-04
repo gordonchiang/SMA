@@ -21,6 +21,7 @@ AD = b'GCMAuthenticationData'
 	A class to initialize private and public keys with ephemeral Diffie-Hellman to
 	ensure perfect forward secrecy.
 """
+class DH_Keys:
 	def __init__(self):
 		self.priv_key = parameters.generate_private_key()
 		self.public_key = self.priv_key.public_key()
