@@ -5,12 +5,17 @@ from cryptography.x509.oid import NameOID
 from cryptography import x509
 import datetime
 
+"""
+  SelfSignedCertificate
+
+  Generate a certificate that is self-signed with a private key.
+"""
 class SelfSignedCertificate:
   def __init__(self, hostname, passphrase, key=None):
     if key is None:
-      # Create a new key.
-      # Saved to a pem file
+      # Create a new private key
       self.key = rsa.generate_private_key(public_exponent=65537, key_size=2048)
+
       # Create certificate.
       subject = issuer = x509.Name([
         x509.NameAttribute(NameOID.COMMON_NAME, hostname)
@@ -30,13 +35,19 @@ class SelfSignedCertificate:
               ).sign(
                 self.key, hashes.SHA256()
               )
+
+      # Write the certificate and private key to disk.
       self.write('certificate.crt', 'key.pem', passphrase)
 
     else:
       # TODO: Load established certificate.
       pass
 
-    
+  """
+    write()
+
+    Write the certificate and private key PEM to disk.
+  """
   def write(self, cert_fn, key_fn, passphrase):
     certfile = open(cert_fn, 'wb')
     certfile.write(self.cert.public_bytes(serialization.Encoding.PEM))
@@ -48,6 +59,3 @@ class SelfSignedCertificate:
       ))
     keyfile.close()
     certfile.close()
-
-if __name__ == '__main__':
-  cert = SelfSignedCertificate(u'message_server', b'passphrase')
