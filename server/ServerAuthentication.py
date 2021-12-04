@@ -1,3 +1,4 @@
+from re import match
 import sqlite3
 import os
 from cryptography.hazmat.primitives.kdf.scrypt import Scrypt
@@ -26,11 +27,49 @@ def verify_password(plaintext, hash, salt):
   generate_kdf(salt).verify(plaintext.encode(), hash)
 
 """
+  validate_username_input()
+
+  Validate username input to be alphanumeric only.
+"""
+def validate_username_input(username):
+  # Enforce usernames to be alphanumeric
+  if match('^[a-zA-Z0-9]+$', username):
+    return True
+  else:
+    return False
+
+"""
+  validate_password_input()
+
+  Validates password input for:
+  - forbidden characters
+  - length requirements
+  - not a common passwords
+"""
+def validate_password_input(password):
+  if '\n' in password: # Avoid problems with packet delimiting
+    return False
+
+  if len(password) < 8:
+    return False
+
+  list_of_common_passwords = ['password', '12345678', '11111111'] 
+  if password in list_of_common_passwords:
+    return False
+
+  return True
+
+"""
   register_new_user()
 
   Register a new user account in the SQL database.
 """
 def register_new_user(client_socket, db, username, password):
+  # Validate user input
+  if validate_username_input(username) is False or validate_password_input(password) is False:
+    client_socket.send('event: register\nstatus: failure\n\n'.encode())
+    return
+
   try:
     # Generate a salt and hash the password
     salt = os.urandom(16)
