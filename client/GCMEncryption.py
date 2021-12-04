@@ -15,44 +15,63 @@ parameters = params_numbers.parameters()
 # Associated data for GCM authentication
 AD = b'GCMAuthenticationData'
 
-class DH_Keys:
-	#
-	# Initialize private and public keys
-	# Note that Ephemeral Diffie-Hellman is used here to ensure perfect forward secrecy
-	#
+"""
+	DH_Keys
+
+	A class to initialize private and public keys with ephemeral Diffie-Hellman to
+	ensure perfect forward secrecy.
+"""
 	def __init__(self):
 		self.priv_key = parameters.generate_private_key()
 		self.public_key = self.priv_key.public_key()
 
+	# Return the private key
 	def get_priv_key(self):
-		return self.priv_key;
+		return self.priv_key
 
+	# Return the public key
 	def get_public_key(self):
-		return self.public_key;
+		return self.public_key
 
-#
-# Generate shared key from own private key and peer public key
-#
+"""
+	gen_shared_key()
+
+	Generate the shared key from own private key and peer public key.
+"""
 def gen_shared_key(priv_key, peer_key):
 	shared_key = priv_key.exchange(peer_key)
 	derived_key = HKDF(algorithm=hashes.SHA256(),length=32,salt=None,info=b'handshake data',).derive(shared_key)
 	return derived_key
 
+"""
+	gen_serialized_key()
+
+	Serialize a public key object into bytes.
+"""
 def gen_serialized_key(public_key):
 	serialized_key = public_key.public_bytes(encoding=serialization.Encoding.PEM, format=serialization.PublicFormat.SubjectPublicKeyInfo)
 	return serialized_key
 
+"""
+	gen_deserialized_key()
+
+	Deserialize a public key from bytes into a loaded public key object.
+"""
 def gen_deserialized_key(serialized_public_key):
 	serialized_key_encoded = serialized_public_key.encode()
 	deserialized_key = load_pem_public_key(serialized_key_encoded)
 	return deserialized_key
 
-#
-# Symmetric cryptography using Diffie-Hellman key (key must be 128, 192, or 256 bits)
-# Message must be in bytes for aesgcm to encrypt
-# Nonce is never reused, size is 16 bytes
-# Nonce is stored with the cipher since it does not need to be secret
-#
+"""
+	encrypt_message()
+
+	Encrypt a plaintext message using the key with AESGCM.
+
+	Symmetric cryptography using Diffie-Hellman key (key must be 128, 192, or 256 bits).
+	Message must be in bytes for aesgcm to encrypt.
+	Nonce is never reused, size is 16 bytes.
+	Nonce is stored with the cipher since it does not need to be secret.
+"""
 def encrypt_message(message, key):
 	aesgcm = AESGCM(key)
 	message_in_bytes = str.encode(message)
@@ -61,14 +80,18 @@ def encrypt_message(message, key):
 	cipher = nonce + cipher
 	return cipher
 
-#
-# Symmetric cryptography using Diffie-Hellman key (must be 128, 192, or 256 bits)
-# First 16 bytes used as nonce, rest are the cipher
-#
+"""
+	decrypt_message()
+
+	Decrypt a plaintext message using the key with AESGCM.
+
+	Symmetric cryptography using Diffie-Hellman key (must be 128, 192, or 256 bits).
+	First 16 bytes used as nonce, rest are the cipher.
+"""
 def decrypt_message(cipher, key):
 	aesgcm = AESGCM(key)
 	try:
 		plaintext = aesgcm.decrypt(cipher[0:16], cipher[16:], AD)
 		return plaintext.decode()
-	except Exception as e:
+	except:
 		return "MESSAGE NOT AUTHENTICATED"
