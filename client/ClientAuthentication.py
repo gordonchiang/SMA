@@ -1,3 +1,5 @@
+from re import match
+
 """
   register()
 
@@ -64,24 +66,14 @@ def delete_account(client_socket, pw):
 """
   validate_username_input()
 
-  Validates username input for:
-  - forbidden characters
+  Validate username input to be alphanumeric only.
 """
 def validate_username_input(username):
-  # Avoid characters that could be used to change dir
-  if '.' in username:
+  # Enforce usernames to be alphanumeric
+  if match('^[a-zA-Z0-9]+$', username):
+    return True
+  else:
     return False
-
-  if '/' in username:
-    return False
-
-  if '~' in username:
-    return False
-
-  if '\n' in username: # Avoid problems with packet delimiting
-    return False
-
-  return True
 
 """
   validate_password_input()
@@ -89,7 +81,7 @@ def validate_username_input(username):
   Validates password input for:
   - forbidden characters
   - length requirements
-  - TO-DO: forbidden passwords (in list of common passwords)
+  - not a common passwords
 """
 def validate_password_input(password):
   if '\n' in password: # Avoid problems with packet delimiting
@@ -98,7 +90,8 @@ def validate_password_input(password):
   if len(password) < 8:
     return False
 
-  # if password in list_of_common_passwords:
-  #   return False
+  list_of_common_passwords = ['password', '12345678', '11111111'] 
+  if password in list_of_common_passwords:
+    return False
 
   return True
