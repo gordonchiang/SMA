@@ -21,7 +21,7 @@ After cloning the repo, run `pip install -r requirements.txt` from the root dire
 
 ### Client
 
-1. With the server running, create a client instance: `python3 ./client/client.py`
+1. With the server running, create a client instance: `python3 ./client/client.py`.
 2. The client's GUI will load which will prompt the user for account management events:
     1. Login: login to an existing account with the server using a username and password.
     2. Register: register a new account with the server using a username and password.
