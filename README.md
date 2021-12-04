@@ -2,11 +2,15 @@
 
 This is the Gitlab repository for Secure Messaging Application for **Group 16: Gordon Chiang, Lagan Chohan, Tyler Fowler, and Alex Li**.
 
+Secure Messaging Application is a Python program that allows users to securely and synchronously message one another.
+
+## Documentation
+
 **Please refer to the [Gitlab Wiki](https://gitlab.csc.uvic.ca/courses/2021091/SENG360/teams/group-16/sm/-/wikis/home) for more in-depth documentation**.
 
 ## Installation
 
-Secure Messaging Application requires Python 3.9 or higher.
+Secure Messaging Application requires **Python 3.9 or higher**.
 
 After cloning the repo, run `pip install -r requirements.txt` from the root directory to install all dependencies.
 
