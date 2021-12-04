@@ -1,6 +1,7 @@
 from re import match, split, DOTALL
 import sys
 from socket import SHUT_RDWR
+
 from ServerAuthentication import *
 
 username_connections = {} # key: username, value: Connection

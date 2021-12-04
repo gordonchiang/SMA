@@ -2,10 +2,11 @@
 
 from re import match, split, DOTALL
 from select import select
+from socket import socket, AF_INET, SHUT_RDWR, SO_REUSEADDR, SOCK_STREAM, SOL_SOCKET
 import sqlite3
 import ssl
-from socket import socket, AF_INET, SHUT_RDWR, SO_REUSEADDR, SOCK_STREAM, SOL_SOCKET
 import sys
+
 from SelfSignedCertificate import *
 from ServerClientConnection import *
 
