@@ -26,4 +26,4 @@ You can create multiple client instances for testing purposes.
 
 
 **Our project high levelDFD:**
-<img src="Documents/DFD_visual.png"/>
+<img src="doc/DFD_visual.png"/>
