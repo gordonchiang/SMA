@@ -27,6 +27,8 @@ After cloning the repo, run `pip install -r requirements.txt` from the root dire
 2. The server will prompt for the private key PEM's pass phrase, which is currently hardcoded as `passphrase`.
 3. The server will output `Listening for events` to the terminal when it is setup and ready to accept clients and listen for events.
 
+![Screenshot of server output](doc/server_output_example.png)
+
 ### Client
 
 1. With the server running, create a client instance: `python3 ./client/client.py`.
@@ -46,3 +48,5 @@ After cloning the repo, run `pip install -r requirements.txt` from the root dire
 ![Screenshot of the main menu](doc/main_menu_example.png)
 
 4. You may create multiple client instances for testing purposes.
+
+![Screenshot of example 1:1 messenging](doc/messenging_example.png)
