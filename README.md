@@ -8,7 +8,7 @@ Secure Messaging Application is a Python program that allows users to securely a
 
 ## Documentation
 
-**Please refer to the [Gitlab Wiki](https://gitlab.csc.uvic.ca/courses/2021091/SENG360/teams/group-16/sm/-/wikis/home) for more in-depth documentation**.
+**Please refer to the [Gitlab Wiki](https://gitlab.csc.uvic.ca/courses/2021091/SENG360/teams/group-16/sma/-/wikis/home) for more in-depth documentation**.
 
 **Please refer to the [archived legacy Gitlab repo](https://gitlab.csc.uvic.ca/courses/2021091/SENG360/teams/group-16/sm-legacy) to view the project's activity history**. Secure Messaging Application moved repos because of a bug that prevented us from pushing changes to the legacy repo. The legacy repo was cloned to this repo--this repo is now the most up-to-date.
 
