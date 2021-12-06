@@ -4,6 +4,8 @@ This is the Gitlab repository for Secure Messaging Application for **Group 16: G
 
 Secure Messaging Application is a Python program that allows users to securely and synchronously message one another.
 
+[A video demo of Secure Messaging Application in action can be found here](https://gitlab.csc.uvic.ca/courses/2021091/SENG360/teams/group-16/sma/-/blob/main/doc/Demo_Video.mp4).
+
 ## Documentation
 
 **Please refer to the [Gitlab Wiki](https://gitlab.csc.uvic.ca/courses/2021091/SENG360/teams/group-16/sm/-/wikis/home) for more in-depth documentation**.
